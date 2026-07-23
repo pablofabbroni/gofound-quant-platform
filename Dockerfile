@@ -17,6 +17,6 @@ COPY app.js ./static/app.js
 # Copy backend files to WORKDIR root so imports resolve cleanly
 RUN cp backend/main.py . && cp backend/auth.py . && cp backend/database.py .
 
-EXPOSE 8000
+EXPOSE 80
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
