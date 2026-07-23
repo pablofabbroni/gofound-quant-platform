@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 import psycopg2
@@ -27,8 +29,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── TimescaleDB connection (via SSH tunnel locally) ───────────────────────────
-
+# ── TimescaleDB connection ────────────────────────────────────────────────────
+# In Docker: uses internal service name. Locally: uses SSH tunnel (127.0.0.1:5433)
 TIMESCALE_URL = os.environ.get(
     "TIMESCALE_URL",
     "postgresql://jasper46:d6eew7wvjpn7od7f2pwyrulgyfiwvkir@127.0.0.1:5433/timescaledb"
@@ -43,6 +45,13 @@ def get_ts_conn():
 @app.on_event("startup")
 def startup():
     init_db()
+
+# Serve frontend static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/", response_class=FileResponse)
+def serve_frontend():
+    return FileResponse("static/index.html")
 
 
 # ── Auth Schemas ──────────────────────────────────────────────────────────────
@@ -73,7 +82,7 @@ class UserResponse(BaseModel):
 
 # ── Auth Endpoints ────────────────────────────────────────────────────────────
 
-@app.get("/")
+@app.get("/api/status")
 def root():
     return {"status": "online", "app": "GoFound Quant Platform API v2.0"}
 
