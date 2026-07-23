@@ -1,0 +1,23 @@
+GoFound Quant Platform
+Documento de Visión v1.0
+Estado: AprobadoFecha: Julio 2026
+Resumen
+GoFound Quant Platform es una plataforma de investigación cuantitativa para recopilar, enriquecer, analizar y transformar datos financieros en conocimiento accionable mediante análisis estadístico, IA y modelos cuantitativos.
+Propósito
+Centralizar datos, construir conocimiento, evaluar estrategias, aprender continuamente y asistir decisiones mediante evidencia.
+Misión
+Construir una plataforma cuantitativa modular, transparente y escalable.
+Visión
+Descubrir oportunidades mediante procesos reproducibles, explicables y medibles.
+Principios
+Datos como activo principal; decisiones explicables; arquitectura modular; aprendizaje continuo; experimentación permanente.
+Objetivos
+Históricos, indicadores, patrones, contexto, ML, backtesting, riesgo, agentes y auditoría.
+Alcance
+Forex, Metales, MT5, TimescaleDB, Python, FastAPI y OpenClaw.
+Arquitectura
+Collectors → TimescaleDB → Feature/Pattern Engine → Decision/Risk → Dashboard/OpenClaw.
+Roadmap
+F1 Infraestructura. F2 Enriquecimiento. F3 Investigación. F4 IA. F5 Producción.
+Lema
+We don't predict markets. We discover opportunities.No intentamos predecir el mercado. Descubrimos oportunidades respaldadas por evidencia.

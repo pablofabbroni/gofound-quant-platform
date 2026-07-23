@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoFound Quant Platform | Comité de Analistas IA</title>
+    <meta name="description" content="Plataforma de trading cuantitativo con comité de analistas de IA, cobertura de datos en tiempo real y simulador de backtesting.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Top Market Ticker Bar -->
+    <div class="ticker-bar" id="tickerBar">
+        <div class="ticker-track" id="tickerTrack">
+            <div class="ticker-item">
+                <span class="symbol">EURUSD</span>
+                <span class="price" id="tk-EURUSD-price">—</span>
+                <span class="change" id="tk-EURUSD-chg">—%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="symbol">GBPUSD</span>
+                <span class="price" id="tk-GBPUSD-price">—</span>
+                <span class="change" id="tk-GBPUSD-chg">—%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="symbol">USDJPY</span>
+                <span class="price" id="tk-USDJPY-price">—</span>
+                <span class="change" id="tk-USDJPY-chg">—%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="symbol">AUDUSD</span>
+                <span class="price" id="tk-AUDUSD-price">—</span>
+                <span class="change" id="tk-AUDUSD-chg">—%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="symbol">XAUUSD</span>
+                <span class="price" id="tk-XAUUSD-price">—</span>
+                <span class="change" id="tk-XAUUSD-chg">—%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="symbol">XAGUSD</span>
+                <span class="price" id="tk-XAGUSD-price">—</span>
+                <span class="change" id="tk-XAGUSD-chg">—%</span>
+            </div>
+            <div class="ticker-item ticker-separator">
+                <span class="badge-active" id="collectorStatusBadge">● COLLECTOR</span>
+                <span class="price" id="collectorStatusText">Verificando...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header class="main-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-logo">GQ</div>
+                <div class="brand-info">
+                    <span class="brand-name">GoFound <strong>Quant Platform</strong></span>
+                    <span class="brand-tagline">We don't predict markets. We discover opportunities.</span>
+                </div>
+            </div>
+
+            <nav class="nav-links" id="mainNav">
+                <button class="nav-btn active" data-tab="committee" id="nav-committee">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/><circle cx="4" cy="14" r="2"/><circle cx="20" cy="14" r="2"/></svg>
+                    Comité de Analistas
+                </button>
+                <button class="nav-btn" data-tab="coverage" id="nav-coverage">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    Cobertura de Datos
+                </button>
+                <button class="nav-btn" data-tab="backtest" id="nav-backtest">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Laboratorio Backtest
+                </button>
+            </nav>
+
+            <div class="user-status" id="userStatusArea">
+                <div class="user-pill" id="userPill">
+                    <span class="user-avatar" id="userAvatar">Q</span>
+                    <span class="user-email" id="userEmailDisplay">Cargando...</span>
+                </div>
+                <button class="btn-logout" id="btnLogout" title="Cerrar sesión">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- TAB 1: COMMITTEE -->
+        <section class="tab-pane active" id="tab-committee">
+
+            <!-- Analyst Status Cards -->
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Comité de Analistas</h2>
+                    <p class="section-subtitle">Estado en tiempo real de cada especialista del comité de IA</p>
+                </div>
+                <button class="btn-refresh" id="btnRefreshCommittee">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    Actualizar
+                </button>
+            </div>
+
+            <div class="analyst-grid" id="analystGrid">
+                <!-- Filled dynamically -->
+                <div class="analyst-card skeleton"></div>
+                <div class="analyst-card skeleton"></div>
+                <div class="analyst-card skeleton"></div>
+                <div class="analyst-card skeleton"></div>
+                <div class="analyst-card skeleton"></div>
+            </div>
+
+            <!-- Two-column: Decisions + Signals Feed -->
+            <div class="committee-bottom-grid">
+
+                <!-- Decisions Table -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <h3>Mesa de Decisiones</h3>
+                        <span class="badge-info">Orquestador CEO</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="decisionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Par</th>
+                                    <th>TF</th>
+                                    <th>Decisión</th>
+                                    <th>Score</th>
+                                    <th>Razonamiento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="decisionsBody">
+                                <tr><td colspan="6" class="empty-row">Cargando decisiones...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Signals Feed -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <h3>Feed de Señales</h3>
+                        <span class="badge-info">Todos los analistas</span>
+                    </div>
+                    <div class="signals-feed" id="signalsFeed">
+                        <div class="empty-row">Cargando señales...</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 2: COVERAGE -->
+        <section class="tab-pane" id="tab-coverage">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Cobertura de Datos Históricos</h2>
+                    <p class="section-subtitle">Rango de velas disponibles por par y temporalidad · Verde parpadeante = Collector activo</p>
+                </div>
+                <button class="btn-refresh" id="btnRefreshCoverage">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    Actualizar
+                </button>
+            </div>
+
+            <div class="coverage-legend">
+                <span class="legend-item"><span class="dot dot-fresh pulse"></span> Activo (< 10 min)</span>
+                <span class="legend-item"><span class="dot dot-stale"></span> Sin actualizar</span>
+                <span class="legend-item"><span class="dot dot-empty"></span> Sin datos</span>
+            </div>
+
+            <div class="glass-panel coverage-panel">
+                <div class="table-wrapper">
+                    <table class="coverage-table" id="coverageTable">
+                        <thead id="coverageHead">
+                            <tr><th>Par / Temporalidad</th></tr>
+                        </thead>
+                        <tbody id="coverageBody">
+                            <tr><td class="empty-row">Cargando cobertura...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: BACKTEST -->
+        <section class="tab-pane" id="tab-backtest">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Laboratorio de Backtesting</h2>
+                    <p class="section-subtitle">Simula el comité de analistas en datos históricos reales de la base de datos</p>
+                </div>
+            </div>
+
+            <div class="backtest-layout">
+
+                <!-- Controls -->
+                <div class="glass-panel backtest-controls">
+                    <h3 class="panel-title">Parámetros de Simulación</h3>
+
+                    <div class="form-group">
+                        <label for="bt-symbol">Par / Activo</label>
+                        <select id="bt-symbol" class="form-control">
+                            <option value="EURUSD">EUR/USD</option>
+                            <option value="GBPUSD">GBP/USD</option>
+                            <option value="USDJPY">USD/JPY</option>
+                            <option value="AUDUSD">AUD/USD</option>
+                            <option value="GBPJPY">GBP/JPY</option>
+                            <option value="EURCAD">EUR/CAD</option>
+                            <option value="XAUUSD">XAU/USD (Oro)</option>
+                            <option value="XAGUSD">XAG/USD (Plata)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bt-timeframe">Temporalidad</label>
+                        <select id="bt-timeframe" class="form-control">
+                            <option value="M1">M1</option>
+                            <option value="M5">M5</option>
+                            <option value="M15" selected>M15</option>
+                            <option value="M30">M30</option>
+                            <option value="H1">H1</option>
+                            <option value="H4">H4</option>
+                            <option value="D1">D1</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bt-days">Días de historia</label>
+                        <input type="number" id="bt-days" class="form-control" value="15" min="5" max="365">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bt-balance">Capital inicial ($)</label>
+                        <input type="number" id="bt-balance" class="form-control" value="10000" min="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bt-risk">Riesgo por operación (%)</label>
+                        <input type="number" id="bt-risk" class="form-control" value="1.0" min="0.1" max="5" step="0.1">
+                    </div>
+
+                    <button class="btn-primary btn-block" id="btnRunBacktest">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Ejecutar Simulación
+                    </button>
+
+                    <div class="backtest-spinner hidden" id="backtestSpinner">
+                        <div class="spinner"></div>
+                        <span>Simulando el comité...</span>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="backtest-results" id="backtestResults">
+                    <div class="results-placeholder">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        <p>Configura los parámetros y ejecuta la simulación para ver los resultados del comité.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- AUTH MODAL -->
+    <div class="auth-overlay active" id="authOverlay">
+        <div class="auth-card glass-panel">
+            <div class="auth-header">
+                <div class="auth-logo">GQ</div>
+                <h3>GoFound Quant Platform</h3>
+                <p>Ingresa tus credenciales para acceder al comité de analistas.</p>
+            </div>
+
+            <form id="loginForm" class="auth-form active">
+                <div class="form-group">
+                    <label for="loginEmail">Correo Electrónico</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="tu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Contraseña</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+                </div>
+                <div class="auth-error" id="authError"></div>
+                <button type="submit" class="btn-primary btn-block" id="btnLoginSubmit">Iniciar Sesión</button>
+                <div class="auth-switch">¿No tienes cuenta? <a href="#" id="linkToRegister">Regístrate</a></div>
+            </form>
+
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="regName">Nombre Completo</label>
+                    <input type="text" id="regName" class="form-control" placeholder="Juan Pérez" required>
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Correo Electrónico</label>
+                    <input type="email" id="regEmail" class="form-control" placeholder="tu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Contraseña</label>
+                    <input type="password" id="regPassword" class="form-control" placeholder="••••••••" minlength="6" required>
+                </div>
+                <div class="auth-error" id="regError"></div>
+                <button type="submit" class="btn-primary btn-block" id="btnRegisterSubmit">Crear Cuenta</button>
+                <div class="auth-switch">¿Ya tienes cuenta? <a href="#" id="linkToLogin">Inicia Sesión</a></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
