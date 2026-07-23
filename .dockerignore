@@ -1,0 +1,10 @@
+node_modules
+.git
+.gitignore
+*.md
+*.docx
+market_data.db
+MT5Downloader
+__pycache__
+*.pyc
+.env

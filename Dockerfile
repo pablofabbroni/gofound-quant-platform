@@ -1,21 +1,22 @@
-FROM python:3.11-slim
+# Stage 1: Build React frontend
+FROM node:20-alpine AS frontend
+WORKDIR /build
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
 
+# Stage 2: Python backend
+FROM python:3.11-slim
 WORKDIR /app
 
-# Install dependencies
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend
 COPY backend/ ./backend/
-
-# Copy frontend static files
-COPY index.html ./static/index.html
-COPY styles.css ./static/styles.css
-COPY app.js ./static/app.js
-
-# Copy backend files to WORKDIR root so imports resolve cleanly
 RUN cp backend/main.py . && cp backend/auth.py . && cp backend/database.py .
+
+COPY --from=frontend /build/dist ./static
 
 EXPOSE 80
 
