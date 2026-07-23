@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 import psycopg2
 import psycopg2.extras
 
-from database import init_db, get_db, User
+from database import init_db, get_db, User, DATABASE_URL
 from auth import hash_password, verify_password, create_access_token, get_current_user_email
 
 app = FastAPI(
@@ -31,10 +31,7 @@ app.add_middleware(
 
 # ── TimescaleDB connection ────────────────────────────────────────────────────
 # In Docker: uses internal service name. Locally: uses SSH tunnel (127.0.0.1:5433)
-TIMESCALE_URL = os.environ.get(
-    "TIMESCALE_URL",
-    "postgresql://jasper46:d6eew7wvjpn7od7f2pwyrulgyfiwvkir@127.0.0.1:5433/timescaledb"
-)
+TIMESCALE_URL = os.environ.get("TIMESCALE_URL", DATABASE_URL)
 
 def get_ts_conn():
     return psycopg2.connect(TIMESCALE_URL)
