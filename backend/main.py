@@ -41,9 +41,94 @@ def get_ts_conn():
     return psycopg2.connect(TIMESCALE_URL)
 
 def get_sqlite_conn():
+    if not os.path.exists(SQLITE_DB_PATH):
+        raise FileNotFoundError(f"Archivo SQLite no encontrado: {SQLITE_DB_PATH}")
     conn = sqlite3.connect(SQLITE_DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+def fetch_symbols_list() -> List[Dict]:
+    """Fetches list of active symbols from TimescaleDB (PostgreSQL) or SQLite fallback."""
+    try:
+        conn = get_ts_conn()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT id, symbol FROM quant_market.symbols WHERE active = TRUE ORDER BY symbol;")
+            rows = cur.fetchall()
+        conn.close()
+        if rows:
+            return [dict(r) for r in rows]
+    except Exception:
+        pass
+
+    if os.path.exists(SQLITE_DB_PATH):
+        try:
+            s_conn = get_sqlite_conn()
+            cur = s_conn.cursor()
+            rows = cur.execute("SELECT id, symbol FROM symbols").fetchall()
+            s_conn.close()
+            if rows:
+                return [{"id": r["id"], "symbol": r["symbol"]} for r in rows]
+        except Exception:
+            pass
+
+    return [
+        {"id": 1, "symbol": "EURUSD"},
+        {"id": 2, "symbol": "GBPUSD"},
+        {"id": 3, "symbol": "USDJPY"},
+        {"id": 4, "symbol": "AUDUSD"},
+        {"id": 5, "symbol": "GBPJPY"},
+        {"id": 6, "symbol": "EURCAD"},
+        {"id": 7, "symbol": "XAUUSD"},
+        {"id": 8, "symbol": "XAGUSD"},
+    ]
+
+def fetch_candles(symbol: str, timeframe: str, limit: int) -> List[Dict]:
+    """
+    Fetches candles for backtesting/analysis.
+    Tries TimescaleDB (PostgreSQL) first. If unavailable or empty, falls back to local SQLite.
+    Returns candles ordered from oldest to newest (ascending time).
+    """
+    # 1. Try TimescaleDB / PostgreSQL
+    try:
+        conn = get_ts_conn()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT c.time, c.open, c.high, c.low, c.close
+                FROM quant_market.candles c
+                JOIN quant_market.symbols sym ON c.symbol_id = sym.id
+                JOIN quant_market.timeframes tf ON c.timeframe_id = tf.id
+                WHERE sym.symbol = %s AND tf.code = %s
+                ORDER BY c.time DESC
+                LIMIT %s;
+            """, (symbol, timeframe, limit))
+            rows = cur.fetchall()
+        conn.close()
+        if rows:
+            return list(reversed([dict(r) for r in rows]))
+    except Exception:
+        pass
+
+    # 2. Fallback to SQLite (local development)
+    if os.path.exists(SQLITE_DB_PATH):
+        try:
+            s_conn = get_sqlite_conn()
+            cur = s_conn.cursor()
+            rows = cur.execute("""
+                SELECT c.time, c.open, c.high, c.low, c.close
+                FROM candles c
+                JOIN symbols s ON c.symbol_id = s.id
+                JOIN timeframes tf ON c.timeframe_id = tf.id
+                WHERE s.symbol = ? AND tf.timeframe = ?
+                ORDER BY c.time DESC LIMIT ?
+            """, (symbol, timeframe, limit)).fetchall()
+            s_conn.close()
+            if rows:
+                return list(reversed([dict(r) for r in rows]))
+        except Exception:
+            pass
+
+    return []
+
 
 def format_iso(dt_val):
     if not dt_val:
@@ -82,9 +167,7 @@ def compute_real_market_decisions(params_dict: Dict[str, Dict[str, str]] = None)
             db = next(get_db())
             params_dict = get_active_params_dict(db)
 
-        s_conn = get_sqlite_conn()
-        cur = s_conn.cursor()
-        symbols = cur.execute("SELECT id, symbol FROM symbols").fetchall()
+        symbols = fetch_symbols_list()
 
         decisions = []
         signals = []
@@ -118,22 +201,15 @@ def compute_real_market_decisions(params_dict: Dict[str, Dict[str, str]] = None)
         ict_p = params_dict.get("ICT-Engine", {})
         ob_lookback_ict = int(float(ict_p.get("ob_lookback", 20)))
 
-        tf_map = {3: "M15", 5: "H1", 6: "H4"}
+        tf_codes = ["M15", "H1", "H4"]
 
         for sym in symbols:
-            sym_id, sym_name = sym["id"], sym["symbol"]
-            for tf_id, tf_code in tf_map.items():
-                rows = cur.execute("""
-                    SELECT time, open, high, low, close
-                    FROM candles
-                    WHERE symbol_id = ? AND timeframe_id = ?
-                    ORDER BY time DESC LIMIT 60
-                """, (sym_id, tf_id)).fetchall()
-
-                if len(rows) < 30:
+            sym_name = sym["symbol"]
+            for tf_code in tf_codes:
+                candles_asc = fetch_candles(sym_name, tf_code, 60)
+                if len(candles_asc) < 30:
                     continue
 
-                candles_asc = list(reversed(rows))
                 closes = [float(r["close"]) for r in candles_asc]
                 highs = [float(r["high"]) for r in candles_asc]
                 lows = [float(r["low"]) for r in candles_asc]
@@ -1062,37 +1138,20 @@ def run_backtest(payload: BacktestRequest, db: Session = Depends(get_db), email:
     selected = payload.selected_analysts or ["Quant-bb", "Trend-Aligner", "RSI-Divergence", "ICT-Engine", "News-Sentiment"]
 
     try:
-        s_conn = get_sqlite_conn()
-        cur = s_conn.cursor()
-        sym_row = cur.execute("SELECT id FROM symbols WHERE symbol = ?", (payload.symbol,)).fetchone()
-        if not sym_row:
-            s_conn.close()
-            raise HTTPException(status_code=404, detail=f"Symbol '{payload.symbol}' not found.")
-
-        tf_row = cur.execute("SELECT id FROM timeframes WHERE timeframe = ?", (payload.timeframe,)).fetchone()
-        if not tf_row:
-            s_conn.close()
-            raise HTTPException(status_code=404, detail=f"Timeframe '{payload.timeframe}' not found.")
-
-        symbol_id = sym_row["id"]
-        timeframe_id = tf_row["id"]
         contract_size = 100000.0 if ("USD" in payload.symbol or "EUR" in payload.symbol) else 100.0
         digits = 3 if "JPY" in payload.symbol else 5
 
         # Query candles for requested days history
         # M15 ~ 96 candles/day, M5 ~ 288, H1 ~ 24, D1 ~ 1
         candles_limit = max(100, payload.days * 96)
-        rows = cur.execute("""
-            SELECT time, open, high, low, close
-            FROM candles
-            WHERE symbol_id = ? AND timeframe_id = ?
-            ORDER BY time DESC LIMIT ?
-        """, (symbol_id, timeframe_id, candles_limit)).fetchall()
-        s_conn.close()
+        candles = fetch_candles(payload.symbol, payload.timeframe, candles_limit)
 
-        candles = list(reversed(rows))
         if len(candles) < 55:
-            raise HTTPException(status_code=422, detail="Datos insuficientes para el backtest. Aumenta el rango de días.")
+            raise HTTPException(
+                status_code=422,
+                detail=f"Datos insuficientes para el backtest de {payload.symbol} {payload.timeframe} ({len(candles)} velas obtenidas). Aumenta el rango de días o verifica que el recolector de datos esté activo."
+            )
+
 
         balance = payload.balance
         risk_pct = payload.risk / 100.0
