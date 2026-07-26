@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { api } from '../api';
 import { Play, BarChart3 } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart,
 } from 'recharts';
 import type { BacktestResponse, EquityPoint } from '../types';
 
@@ -11,6 +11,14 @@ const SYMBOLS = [
 ];
 
 const TIMEFRAMES = ['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1'];
+
+const ALL_ANALYSTS = [
+  'Quant-bb',
+  'Trend-Aligner',
+  'RSI-Divergence',
+  'ICT-Engine',
+  'News-Sentiment',
+];
 
 const COLORS = {
   positive: '#10b981',
@@ -102,16 +110,39 @@ export default function BacktestTab() {
   const [days, setDays] = useState(15);
   const [balance, setBalance] = useState(10000);
   const [risk, setRisk] = useState(1.0);
+  const [selectedAnalysts, setSelectedAnalysts] = useState<string[]>([...ALL_ANALYSTS]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BacktestResponse | null>(null);
   const [error, setError] = useState('');
 
+  const toggleAnalyst = (name: string) => {
+    setSelectedAnalysts((prev) =>
+      prev.includes(name)
+        ? prev.filter((a) => a !== name)
+        : [...prev, name]
+    );
+  };
+
+  const selectAllAnalysts = () => setSelectedAnalysts([...ALL_ANALYSTS]);
+  const selectIndividualAnalyst = () => setSelectedAnalysts(['Quant-bb']);
+
   const handleRun = async () => {
+    if (selectedAnalysts.length === 0) {
+      setError('Debes seleccionar al menos un analista para el backtest.');
+      return;
+    }
     setLoading(true);
     setError('');
     setResult(null);
     try {
-      const res = await api.backtest.run({ symbol, timeframe, days, balance, risk });
+      const res = await api.backtest.run({
+        symbol,
+        timeframe,
+        days,
+        balance,
+        risk,
+        selected_analysts: selectedAnalysts,
+      });
       setResult(res);
     } catch (err: any) {
       setError(err.message);
@@ -134,7 +165,7 @@ export default function BacktestTab() {
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-semibold text-white">Laboratorio de Backtesting</h1>
-        <p className="text-sm text-gray-500">Simula el comité de analistas en datos históricos reales</p>
+        <p className="text-sm text-gray-500">Simula el comité de analistas en datos históricos reales de la base de datos</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -196,10 +227,50 @@ export default function BacktestTab() {
             />
           </div>
 
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-gray-400">Analistas Participantes</label>
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={selectAllAnalysts}
+                  className="text-cyan-400 hover:underline"
+                >
+                  Todos
+                </button>
+                <span className="text-gray-600">•</span>
+                <button
+                  type="button"
+                  onClick={selectIndividualAnalyst}
+                  className="text-cyan-400 hover:underline"
+                >
+                  Individual
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2 bg-white/[0.02] p-3 rounded-xl border border-white/[0.06]">
+              {ALL_ANALYSTS.map((aname) => {
+                const checked = selectedAnalysts.includes(aname);
+                return (
+                  <label key={aname} className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleAnalyst(aname)}
+                      className="rounded border-gray-700 bg-black/40 text-cyan-500 focus:ring-cyan-500/20"
+                    />
+                    <span>{aname}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
           <button
             onClick={handleRun}
             disabled={loading}
-            className="btn-accent w-full"
+            className="btn-accent w-full flex items-center justify-center gap-2"
           >
             {loading ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

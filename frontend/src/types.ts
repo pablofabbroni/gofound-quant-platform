@@ -101,12 +101,14 @@ export interface BacktestRequest {
   days: number;
   balance: number;
   risk: number;
+  selected_analysts?: string[];
 }
 
 export interface BacktestSummary {
   symbol: string;
   timeframe: string;
   days: number;
+  selected_analysts?: string[];
   initial_balance: number;
   final_balance: number;
   net_profit: number;
@@ -140,4 +142,52 @@ export interface BacktestResponse {
   summary: BacktestSummary;
   trades: BacktestTrade[];
   equity_curve: EquityPoint[];
+}
+
+export interface AnalystParamItem {
+  id?: number;
+  param_key: string;
+  param_value: string;
+  description: string;
+  updated_at?: string;
+}
+
+export interface AnalystParamsResponse {
+  data: Record<string, AnalystParamItem[]>;
+}
+
+export interface UpdateAnalystParamsRequest {
+  analyst_name: string;
+  parameters: Record<string, string>;
+}
+
+export interface LabExperimentItem {
+  id: number;
+  experiment_name: string;
+  symbol: string;
+  timeframe: string;
+  analyst_name: string;
+  params_tested: Record<string, string>;
+  days: number;
+  total_trades: number;
+  win_rate: number;
+  net_profit_pct: number;
+  net_profit_usd: number;
+  sharpe_ratio: number;
+  max_drawdown_pct: number;
+  status: string;
+  created_at: string;
+}
+
+export interface LabExperimentsResponse {
+  data: LabExperimentItem[];
+}
+
+export interface RunHypothesisRequest {
+  experiment_name?: string;
+  analyst_name: string;
+  symbol: string;
+  timeframe: string;
+  days: number;
+  param_variations?: Record<string, string>[];
 }

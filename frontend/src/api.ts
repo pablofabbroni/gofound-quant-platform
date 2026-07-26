@@ -10,6 +10,10 @@ import type {
   BacktestResponse,
   LoginRequest,
   RegisterRequest,
+  AnalystParamsResponse,
+  UpdateAnalystParamsRequest,
+  LabExperimentsResponse,
+  RunHypothesisRequest,
 } from './types';
 
 const BASE = '';
@@ -66,5 +70,45 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+  },
+  analysts: {
+    getParams: () => request<AnalystParamsResponse>('/api/analysts/parameters'),
+    updateParams: (data: UpdateAnalystParamsRequest) =>
+      request<{ status: string; analyst_name: string; updated: string[] }>(
+        '/api/analysts/parameters',
+        {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }
+      ),
+    resetParams: (analyst_name?: string) =>
+      request<{ status: string; reset: string }>(
+        '/api/analysts/parameters/reset',
+        {
+          method: 'POST',
+          body: JSON.stringify({ analyst_name }),
+        }
+      ),
+  },
+  lab: {
+    getExperiments: () => request<LabExperimentsResponse>('/api/lab/experiments'),
+    runHypothesis: (data: RunHypothesisRequest) =>
+      request<{ status: string; experiment: any }>(
+        '/api/lab/experiments/run-hypothesis',
+        {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }
+      ),
+    applyExperiment: (id: number) =>
+      request<{ status: string; analyst_name: string; applied_params: any }>(
+        `/api/lab/experiments/${id}/apply`,
+        { method: 'POST' }
+      ),
+    runAutoAgent: () =>
+      request<{ status: string; message: string }>(
+        '/api/lab/agent/run-auto-research',
+        { method: 'POST' }
+      ),
   },
 };

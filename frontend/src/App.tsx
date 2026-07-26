@@ -7,8 +7,10 @@ import Header from './components/Header';
 import CommitteeTab from './components/CommitteeTab';
 import CoverageTab from './components/CoverageTab';
 import BacktestTab from './components/BacktestTab';
+import ParametersTab from './components/ParametersTab';
+import LabTab from './components/LabTab';
 
-type Tab = 'committee' | 'coverage' | 'backtest';
+type Tab = 'committee' | 'coverage' | 'backtest' | 'parameters' | 'lab';
 
 export default function App() {
   const [user, setUser] = useState<UserResponse | null>(null);
@@ -58,6 +60,8 @@ export default function App() {
     { key: 'committee', label: 'Comité de Analistas' },
     { key: 'coverage', label: 'Cobertura de Datos' },
     { key: 'backtest', label: 'Laboratorio Backtest' },
+    { key: 'parameters', label: 'Parámetros de Analistas' },
+    { key: 'lab', label: 'Laboratorio de IA' },
   ];
 
   return (
@@ -66,20 +70,20 @@ export default function App() {
       <Header user={user} onLogout={handleLogout} />
 
       <nav className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-white/[0.06]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto scrollbar-none">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+              className={`px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap ${
                 tab === t.key
-                  ? 'text-accent-light'
-                  : 'text-gray-500 hover:text-gray-300'
+                  ? 'text-cyan-400 font-semibold'
+                  : 'text-gray-400 hover:text-gray-200'
               }`}
             >
               {t.label}
               {tab === t.key && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full" />
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
               )}
             </button>
           ))}
@@ -90,6 +94,8 @@ export default function App() {
         {tab === 'committee' && <CommitteeTab />}
         {tab === 'coverage' && <CoverageTab />}
         {tab === 'backtest' && <BacktestTab />}
+        {tab === 'parameters' && <ParametersTab />}
+        {tab === 'lab' && <LabTab />}
       </main>
     </div>
   );
