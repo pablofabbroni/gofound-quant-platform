@@ -35,15 +35,20 @@ app.add_middleware(
 TIMESCALE_URL = os.environ.get("TIMESCALE_URL", DATABASE_URL)
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
-SQLITE_DB_PATH = os.path.join(PARENT_DIR, "market_data.db")
+db_candidates = [
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "market_data.db")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "market_data.db")),
+    os.path.abspath("market_data.db"),
+    "/app/market_data.db"
+]
+SQLITE_DB_PATH = next((p for p in db_candidates if os.path.exists(p)), db_candidates[0])
 
 def get_ts_conn():
     return psycopg2.connect(TIMESCALE_URL)
 
 def get_sqlite_conn():
-    if not os.path.exists(SQLITE_DB_PATH):
-        raise FileNotFoundError(f"Archivo SQLite no encontrado: {SQLITE_DB_PATH}")
-    conn = sqlite3.connect(SQLITE_DB_PATH)
+    actual_path = next((p for p in db_candidates if os.path.exists(p)), SQLITE_DB_PATH)
+    conn = sqlite3.connect(actual_path)
     conn.row_factory = sqlite3.Row
     return conn
 

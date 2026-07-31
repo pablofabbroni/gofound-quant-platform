@@ -3,7 +3,6 @@ node_modules
 .gitignore
 *.md
 *.docx
-market_data.db
 MT5Downloader
 __pycache__
 *.pyc
