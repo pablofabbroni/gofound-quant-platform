@@ -1315,10 +1315,15 @@ def run_backtest(payload: BacktestRequest, db: Session = Depends(get_db), email:
                 elif c_price >= max_recent * 0.9995: analyst_votes["ICT-Engine"] = "SELL"
                 else: analyst_votes["ICT-Engine"] = "NEUTRAL"
 
+            if "News-Sentiment" in selected:
+                if c_price > ema_fast_val and rsi < 60: analyst_votes["News-Sentiment"] = "BUY"
+                elif c_price < ema_fast_val and rsi > 40: analyst_votes["News-Sentiment"] = "SELL"
+                else: analyst_votes["News-Sentiment"] = "NEUTRAL"
+
             buys = [v for v in analyst_votes.values() if v == "BUY"]
             sells = [v for v in analyst_votes.values() if v == "SELL"]
 
-            min_required = 1 if len(selected) == 1 else max(1, len(selected) // 2)
+            min_required = 1 if len(selected) == 1 else (len(selected) // 2 + 1)
             direction = None
             if len(buys) >= min_required and len(sells) == 0:
                 direction = "BUY"
