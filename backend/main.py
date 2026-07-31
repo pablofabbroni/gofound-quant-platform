@@ -3,7 +3,7 @@ import json
 import sqlite3
 import numpy as np
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
