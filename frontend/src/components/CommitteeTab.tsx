@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api';
-import { RefreshCw, TrendingUp, TrendingDown, AlertTriangle, Users } from 'lucide-react';
+import { RefreshCw, Shield, Activity, Award, CheckCircle2, Sliders } from 'lucide-react';
 import type { Analyst, Decision, Signal } from '../types';
 
 function relativeTime(iso: string): string {
@@ -12,17 +12,6 @@ function relativeTime(iso: string): string {
   if (hrs < 24) return `hace ${hrs}h`;
   return `hace ${Math.round(hrs / 24)}d`;
 }
-
-function formatNum(n: number | null | undefined): string {
-  if (n === null || n === undefined) return '—';
-  return Number(n).toLocaleString('es');
-}
-
-const SIGNAL_ICONS: Record<string, typeof TrendingUp> = {
-  BUY: TrendingUp,
-  SELL: TrendingDown,
-  VETO: AlertTriangle,
-};
 
 export default function CommitteeTab() {
   const [analysts, setAnalysts] = useState<Analyst[]>([]);
@@ -42,54 +31,103 @@ export default function CommitteeTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  const signalColor = (s: string | null) => {
-    switch (s) {
-      case 'BUY': return 'text-green';
-      case 'SELL': return 'text-red';
-      case 'VETO': return 'text-yellow-400';
-      default: return 'text-gray-500';
-    }
-  };
+  // Calculate live consensus metrics
+  const buySignalsCount = analysts.filter(a => a.last_signal === 'BUY').length;
+  const sellSignalsCount = analysts.filter(a => a.last_signal === 'SELL').length;
+  const totalActive = analysts.length || 5;
+  const consensusPct = Math.round(((buySignalsCount - sellSignalsCount) / totalActive) * 50 + 50);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
-          <h1 className="text-lg font-semibold text-white">Comité de Analistas</h1>
-          <p className="text-sm text-gray-500">Estado en tiempo real de cada especialista del comité de IA</p>
+          <h1 className="text-xl font-bold text-white tracking-wide">Comité de Analistas IA</h1>
+          <p className="text-sm text-slate-400">Estado en tiempo real y gobernanza del comité multi-agente de trading</p>
         </div>
-        <button onClick={load} disabled={loading} className="btn-ghost">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Actualizar
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={load}
+            disabled={loading}
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition-all shadow-md"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${loading ? 'animate-spin' : ''}`} />
+            Actualizar Estado
+          </button>
+        </div>
       </div>
 
+      {/* Consensus Meter Bar */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-2xl backdrop-blur-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+              <Shield className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Termómetro de Consenso Global del Comité</h3>
+              <p className="text-xs text-slate-400">Ponderación en vivo entre los 5 analistas especializados</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-mono font-bold">
+            <span className="text-emerald-400 flex items-center gap-1">▲ BUY ({buySignalsCount})</span>
+            <span className="text-rose-400 flex items-center gap-1">▼ SELL ({sellSignalsCount})</span>
+            <span className="text-slate-400">NEUTRAL ({totalActive - buySignalsCount - sellSignalsCount})</span>
+          </div>
+        </div>
+
+        {/* Dynamic Progress Bar */}
+        <div className="relative w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+          <div
+            className="h-full bg-gradient-to-r from-rose-500 via-yellow-500 to-emerald-500 transition-all duration-700"
+            style={{ width: `${consensusPct}%` }}
+          />
+        </div>
+        <div className="flex justify-between text-[10px] text-slate-500 mt-1.5 font-mono">
+          <span>0% STRONG SELL</span>
+          <span className="text-cyan-400 font-bold">50% NEUTRAL</span>
+          <span>100% STRONG BUY</span>
+        </div>
+      </div>
+
+      {/* Analyst Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
         {analysts.map((a) => {
-          const Icon = a.last_signal ? SIGNAL_ICONS[a.last_signal] : Users;
+          const isBuy = a.last_signal === 'BUY';
+          const isSell = a.last_signal === 'SELL';
           return (
             <div
               key={a.name}
-              className={`glass p-4 transition-all duration-300 ${
-                a.is_active ? 'ring-1 ring-accent/20' : ''
+              className={`bg-slate-900/90 border rounded-xl p-4 transition-all duration-300 hover:border-slate-600 shadow-lg ${
+                a.is_active ? 'border-slate-800' : 'border-slate-800/50 opacity-75'
               }`}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className={`flex items-center gap-1.5 text-[11px] font-medium ${a.is_active ? 'text-green' : 'text-gray-500'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${a.is_active ? 'bg-green animate-pulse-dot' : 'bg-gray-600'}`} />
-                  {a.is_active ? 'ACTIVO' : 'SIN SEÑAL'}
+                <span className={`flex items-center gap-1.5 text-[11px] font-bold ${a.is_active ? 'text-emerald-400' : 'text-slate-500'}`}>
+                  <span className={`w-2 h-2 rounded-full ${a.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`} />
+                  {a.is_active ? 'ONLINE' : 'STANDBY'}
                 </span>
-                <span className="font-mono text-xs text-accent-light">{a.score !== null ? a.score : '—'}</span>
+                <span className="font-mono text-xs text-cyan-400 font-bold bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                  Score: {a.score !== null ? a.score : '—'}
+                </span>
               </div>
-              <h3 className="text-sm font-semibold text-white mb-1">{a.name}</h3>
-              <p className="text-[11px] text-gray-500 mb-3 leading-relaxed">{a.description}</p>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-600">
+              <h3 className="text-sm font-bold text-white mb-1 flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-cyan-400" />
+                {a.name}
+              </h3>
+              <p className="text-[11px] text-slate-400 mb-3 leading-relaxed min-h-[32px]">{a.description}</p>
+              
+              <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
+                <span className="text-slate-500 text-[10px]">
                   {a.last_signal_time ? relativeTime(a.last_signal_time) : 'Sin señal'}
-                  {a.last_symbol && ` · ${a.last_symbol} ${a.last_timeframe || ''}`}
+                  {a.last_symbol && ` · ${a.last_symbol}`}
                 </span>
-                <span className={`signal-badge ${a.last_signal || 'wait'}`}>
-                  {(a.last_signal || '—').toUpperCase()}
+                <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold font-mono ${
+                  isBuy ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                  isSell ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                  'bg-slate-800 text-slate-400'
+                }`}>
+                  {(a.last_signal || 'WAIT').toUpperCase()}
                 </span>
               </div>
             </div>
@@ -97,41 +135,48 @@ export default function CommitteeTab() {
         })}
       </div>
 
+      {/* Tables Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-            <h3 className="text-sm font-semibold text-white">Mesa de Decisiones</h3>
-            <span className="badge-accent">Orquestador CEO</span>
+        {/* Decisions Table */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Mesa de Decisiones del Orquestador CEO
+            </h3>
+            <span className="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono font-bold">CEO Engine</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06]">
-                  <th className="text-left px-5 py-3 text-[11px] text-gray-500 font-medium uppercase tracking-wider">Hora</th>
-                  <th className="text-left px-5 py-3 text-[11px] text-gray-500 font-medium uppercase tracking-wider">Par</th>
-                  <th className="text-left px-5 py-3 text-[11px] text-gray-500 font-medium uppercase tracking-wider">TF</th>
-                  <th className="text-left px-5 py-3 text-[11px] text-gray-500 font-medium uppercase tracking-wider">Decisión</th>
-                  <th className="text-left px-5 py-3 text-[11px] text-gray-500 font-medium uppercase tracking-wider">Score</th>
-                  <th className="text-left px-5 py-3 text-[11px] text-gray-500 font-medium uppercase tracking-wider">Razonamiento</th>
+                <tr className="border-b border-slate-800 bg-slate-900/90">
+                  <th className="text-left px-4 py-3 text-[11px] text-slate-400 font-semibold uppercase">Hora</th>
+                  <th className="text-left px-4 py-3 text-[11px] text-slate-400 font-semibold uppercase">Par / TF</th>
+                  <th className="text-left px-4 py-3 text-[11px] text-slate-400 font-semibold uppercase">Decisión</th>
+                  <th className="text-left px-4 py-3 text-[11px] text-slate-400 font-semibold uppercase">Consenso</th>
+                  <th className="text-left px-4 py-3 text-[11px] text-slate-400 font-semibold uppercase">Razonamiento</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-800/60">
                 {decisions.length === 0 ? (
-                  <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-600 text-sm">Sin decisiones registradas aún.</td></tr>
+                  <tr><td colSpan={5} className="px-5 py-8 text-center text-slate-500 text-xs font-mono">Sin decisiones registradas aún en el sistema.</td></tr>
                 ) : (
                   decisions.map((d, i) => (
-                    <tr key={i} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02]">
-                      <td className="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">
-                        {new Date(d.time).toLocaleDateString('es', { month: 'short', day: 'numeric' })}{' '}
+                    <tr key={i} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="px-4 py-3 text-slate-400 text-xs font-mono whitespace-nowrap">
                         {new Date(d.time).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td className="px-5 py-3 text-white font-semibold text-xs">{d.symbol}</td>
-                      <td className="px-5 py-3 text-gray-400 text-xs">{d.timeframe}</td>
-                      <td className="px-5 py-3">
-                        <span className={`signal-badge ${d.recommendation}`}>{d.recommendation}</span>
+                      <td className="px-4 py-3 text-white font-bold text-xs">{d.symbol} <span className="text-slate-400 font-normal">{d.timeframe}</span></td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          d.recommendation === 'BUY' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                          d.recommendation === 'SELL' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                          'bg-slate-800 text-slate-400'
+                        }`}>
+                          {d.recommendation}
+                        </span>
                       </td>
-                      <td className="px-5 py-3 text-accent-light text-xs">{d.consensus_score ?? '—'}</td>
-                      <td className="px-5 py-3 text-gray-500 text-xs max-w-[200px] truncate">{d.reasoning || '—'}</td>
+                      <td className="px-4 py-3 text-cyan-400 font-mono text-xs font-bold">{d.consensus_score ?? '—'}</td>
+                      <td className="px-4 py-3 text-slate-400 text-xs max-w-[180px] truncate">{d.reasoning || '—'}</td>
                     </tr>
                   ))
                 )}
@@ -140,23 +185,34 @@ export default function CommitteeTab() {
           </div>
         </div>
 
-        <div className="glass">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-            <h3 className="text-sm font-semibold text-white">Feed de Señales</h3>
-            <span className="badge-accent">Todos los analistas</span>
+        {/* Signals Feed */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Activity className="w-4 h-4 text-cyan-400" /> Feed en Vivo de Señales de Analistas
+            </h3>
+            <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">5 Especialistas</span>
           </div>
-          <div className="max-h-[400px] overflow-y-auto">
+          <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-800/60">
             {signals.length === 0 ? (
-              <div className="px-5 py-8 text-center text-gray-600 text-sm">Sin señales activas registradas.</div>
+              <div className="px-5 py-8 text-center text-slate-500 text-xs font-mono">Sin señales activas registradas.</div>
             ) : (
               signals.map((s, i) => (
-                <div key={i} className="flex items-center gap-3 px-5 py-2.5 border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] text-xs">
-                  <span className="text-gray-600 w-14 shrink-0">
-                    {new Date(s.time).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                <div key={i} className="flex items-center justify-between px-4 py-2.5 hover:bg-slate-800/40 text-xs transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-500 font-mono text-[11px]">
+                      {new Date(s.time).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="text-white font-bold">{s.analyst_name}</span>
+                    <span className="text-slate-400">{s.symbol} <span className="text-slate-500">{s.timeframe}</span></span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                    s.raw_signal === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' :
+                    s.raw_signal === 'SELL' ? 'bg-rose-500/20 text-rose-400' :
+                    'bg-slate-800 text-slate-400'
+                  }`}>
+                    {s.raw_signal}
                   </span>
-                  <span className="text-white font-medium w-28 shrink-0">{s.analyst_name}</span>
-                  <span className="text-gray-400 w-20 shrink-0">{s.symbol} {s.timeframe}</span>
-                  <span className={`signal-badge ${s.raw_signal} ml-auto`}>{s.raw_signal}</span>
                 </div>
               ))
             )}

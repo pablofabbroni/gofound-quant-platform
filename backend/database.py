@@ -73,6 +73,7 @@ class LabExperiment(Base):
     sharpe_ratio = Column(Float, default=0.0)
     max_drawdown_pct = Column(Float, default=0.0)
     status = Column(String(20), default="COMPLETED") # COMPLETED, APPLIED, REJECTED
+    reasoning = Column(String(1000), nullable=True) # Textual AI reasoning/justification
     created_at = Column(DateTime, default=datetime.utcnow)
 
 DEFAULT_ANALYST_PARAMS = [

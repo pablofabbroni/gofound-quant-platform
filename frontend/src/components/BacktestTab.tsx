@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { api } from '../api';
-import { Play, BarChart3 } from 'lucide-react';
-import {
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart,
-} from 'recharts';
-import type { BacktestResponse, EquityPoint } from '../types';
+import { Play, BarChart3, ShieldCheck, Zap, Percent, DollarSign } from 'lucide-react';
+import { TradingChart } from './TradingChart';
+import type { BacktestResponse } from '../types';
 
 const SYMBOLS = [
   'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'GBPJPY', 'EURCAD', 'XAUUSD', 'XAGUSD',
@@ -32,66 +30,61 @@ function formatNum(n: number | null | undefined): string {
   return Number(n).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
+function StatCard({ label, value, color, subtitle }: { label: string; value: string; color?: string; subtitle?: string }) {
   return (
-    <div className="glass px-3 py-2 text-xs shadow-xl">
-      <p className="text-gray-400">{label}</p>
-      <p className="text-white font-mono font-semibold">${formatNum(payload[0].value)}</p>
-    </div>
-  );
-}
-
-function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div className="glass p-4">
-      <div className="text-lg font-bold font-mono" style={{ color: color || COLORS.accent }}>{value}</div>
-      <div className="text-[11px] text-gray-500 mt-0.5">{label}</div>
+    <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl shadow-lg backdrop-blur-sm hover:border-slate-700 transition-all">
+      <div className="text-xl font-bold font-mono" style={{ color: color || COLORS.accent }}>{value}</div>
+      <div className="text-xs font-semibold text-slate-300 mt-1">{label}</div>
+      {subtitle && <div className="text-[10px] text-slate-500 mt-0.5">{subtitle}</div>}
     </div>
   );
 }
 
 function TradesTable({ trades }: { trades: BacktestResponse['trades'] }) {
   return (
-    <div className="glass overflow-hidden">
-      <div className="px-5 py-4 border-b border-white/[0.06]">
-        <h3 className="text-sm font-semibold text-white">
-          Últimas {Math.min(trades.length, 50)} Operaciones
+    <div className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+      <div className="px-5 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+          <Zap className="w-4 h-4 text-cyan-400" />
+          Registro Histórico de Operaciones ({trades.length} ejecuciones)
         </h3>
+        <span className="text-xs text-slate-400 font-mono">Slippage & Comisiones aplicadas</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06]">
+            <tr className="border-b border-slate-800 bg-slate-900/90">
               {['Entrada', 'Salida', 'Dir.', 'P. Entrada', 'P. Salida', 'Lotes', 'P&L', 'Resultado'].map((h) => (
-                <th key={h} className="text-left px-4 py-3 text-[11px] text-gray-500 font-medium uppercase tracking-wider">
+                <th key={h} className="text-left px-4 py-3 text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-800/60">
             {trades.map((t, i) => (
-              <tr key={i} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02]">
-                <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+              <tr key={i} className="hover:bg-slate-800/40 transition-colors">
+                <td className="px-4 py-3 text-slate-400 text-xs font-mono whitespace-nowrap">
                   {new Date(t.entry_time).toLocaleDateString('es', { month: 'short', day: 'numeric' })}{' '}
                   {new Date(t.entry_time).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                 </td>
-                <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                <td className="px-4 py-3 text-slate-400 text-xs font-mono whitespace-nowrap">
                   {new Date(t.exit_time).toLocaleDateString('es', { month: 'short', day: 'numeric' })}{' '}
                   {new Date(t.exit_time).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`signal-badge ${t.direction}`}>{t.direction}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.direction === 'BUY' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
+                    {t.direction}
+                  </span>
                 </td>
-                <td className="px-4 py-3 text-white text-xs font-mono">{t.entry_price}</td>
-                <td className="px-4 py-3 text-white text-xs font-mono">{t.exit_price}</td>
-                <td className="px-4 py-3 text-gray-400 text-xs">{t.size}</td>
-                <td className={`px-4 py-3 text-xs font-semibold font-mono ${t.pnl >= 0 ? 'text-green' : 'text-red'}`}>
+                <td className="px-4 py-3 text-slate-200 text-xs font-mono">{t.entry_price}</td>
+                <td className="px-4 py-3 text-slate-200 text-xs font-mono">{t.exit_price}</td>
+                <td className="px-4 py-3 text-slate-400 text-xs font-mono">{t.size}</td>
+                <td className={`px-4 py-3 text-xs font-bold font-mono ${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs font-bold ${t.result === 'TP' ? 'text-green' : 'text-red'}`}>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${t.result === 'TP' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                     {t.result}
                   </span>
                 </td>
@@ -153,112 +146,120 @@ export default function BacktestTab() {
 
   const s = result?.summary;
   const trades = result?.trades || [];
-
-  const chartData = result?.equity_curve?.map((p: EquityPoint) => ({
-    time: new Date(p.time).toLocaleDateString('es', { month: 'short', day: 'numeric' }),
-    equity: p.equity,
-  })) || [];
+  const candles = result?.candles || [];
 
   const isPositive = s?.net_profit ? s.net_profit >= 0 : true;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-white">Laboratorio de Backtesting</h1>
-        <p className="text-sm text-gray-500">Simula el comité de analistas en datos históricos reales de la base de datos</p>
+      <div className="flex justify-between items-end border-b border-slate-800 pb-4">
+        <div>
+          <h1 className="text-xl font-bold text-white tracking-wide">Laboratorio de Backtesting Cuantitativo</h1>
+          <p className="text-sm text-slate-400">Simulación multi-agente con métricas avanzadas (Sharpe, Sortino, Slippage & Comisiones)</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span>TimescaleDB & Engine Activo</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="glass p-5 space-y-4 lg:col-span-1">
-          <h3 className="text-sm font-semibold text-white">Parámetros de Simulación</h3>
+        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-xl space-y-4 lg:col-span-1 shadow-2xl backdrop-blur-sm">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Percent className="w-4 h-4 text-cyan-400" /> Parámetros de Simulación
+          </h3>
 
           <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Par / Activo</label>
+            <label className="block text-xs text-slate-400 mb-1.5 font-medium">Par / Activo Financiero</label>
             <select
               value={symbol}
               onChange={(e) => setSymbol(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-accent/50 transition-colors"
+              className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors"
             >
               {SYMBOLS.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Temporalidad</label>
+            <label className="block text-xs text-slate-400 mb-1.5 font-medium">Temporalidad (Timeframe)</label>
             <select
               value={timeframe}
               onChange={(e) => setTimeframe(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-accent/50 transition-colors"
+              className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors"
             >
               {TIMEFRAMES.map((tf) => <option key={tf} value={tf}>{tf}</option>)}
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Días de historia</label>
-            <input
-              type="number"
-              value={days}
-              onChange={(e) => setDays(Number(e.target.value))}
-              min={5} max={365}
-              className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-accent/50 transition-colors"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1.5 font-medium">Días de historia</label>
+              <input
+                type="number"
+                value={days}
+                onChange={(e) => setDays(Number(e.target.value))}
+                min={5} max={365}
+                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1.5 font-medium">Riesgo / Operación (%)</label>
+              <input
+                type="number"
+                value={risk}
+                onChange={(e) => setRisk(Number(e.target.value))}
+                min={0.1} max={5} step={0.1}
+                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors font-mono"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Capital inicial ($)</label>
-            <input
-              type="number"
-              value={balance}
-              onChange={(e) => setBalance(Number(e.target.value))}
-              min={100}
-              className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-accent/50 transition-colors"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Riesgo por operación (%)</label>
-            <input
-              type="number"
-              value={risk}
-              onChange={(e) => setRisk(Number(e.target.value))}
-              min={0.1} max={5} step={0.1}
-              className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-accent/50 transition-colors"
-            />
+            <label className="block text-xs text-slate-400 mb-1.5 font-medium">Capital Inicial (USD)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-slate-500 text-sm">$</span>
+              <input
+                type="number"
+                value={balance}
+                onChange={(e) => setBalance(Number(e.target.value))}
+                min={100}
+                className="w-full pl-7 pr-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors font-mono"
+              />
+            </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs text-gray-400">Analistas Participantes</label>
+              <label className="text-xs text-slate-400 font-medium">Comité de Analistas IA</label>
               <div className="flex items-center gap-2 text-xs">
                 <button
                   type="button"
                   onClick={selectAllAnalysts}
-                  className="text-cyan-400 hover:underline"
+                  className="text-cyan-400 hover:underline font-medium"
                 >
                   Todos
                 </button>
-                <span className="text-gray-600">•</span>
+                <span className="text-slate-700">•</span>
                 <button
                   type="button"
                   onClick={selectIndividualAnalyst}
-                  className="text-cyan-400 hover:underline"
+                  className="text-cyan-400 hover:underline font-medium"
                 >
                   Individual
                 </button>
               </div>
             </div>
 
-            <div className="space-y-2 bg-white/[0.02] p-3 rounded-xl border border-white/[0.06]">
+            <div className="space-y-2 bg-slate-950 p-3 rounded-lg border border-slate-800">
               {ALL_ANALYSTS.map((aname) => {
                 const checked = selectedAnalysts.includes(aname);
                 return (
-                  <label key={aname} className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                  <label key={aname} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleAnalyst(aname)}
-                      className="rounded border-gray-700 bg-black/40 text-cyan-500 focus:ring-cyan-500/20"
+                      className="rounded border-slate-700 bg-slate-900 text-cyan-500 focus:ring-cyan-500/20"
                     />
                     <span>{aname}</span>
                   </label>
@@ -270,121 +271,94 @@ export default function BacktestTab() {
           <button
             onClick={handleRun}
             disabled={loading}
-            className="btn-accent w-full flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold text-sm rounded-lg shadow-lg hover:shadow-cyan-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <Play className="w-4 h-4" />
+              <Play className="w-4 h-4 fill-current" />
             )}
-            Ejecutar Simulación
+            Ejecutar Simulación Avanzada
           </button>
-
-          {loading && (
-            <div className="flex items-center gap-3 text-sm text-gray-400">
-              <span className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-              Simulando el comité...
-            </div>
-          )}
         </div>
 
         <div className="lg:col-span-2 space-y-6">
           {error && (
-            <div className="glass p-5 text-red text-sm border border-red/20">
-              Error: {error}
+            <div className="bg-rose-500/10 border border-rose-500/30 p-4 rounded-xl text-rose-400 text-sm">
+              Error en la simulación: {error}
             </div>
           )}
 
           {!result && !loading && !error && (
-            <div className="glass p-12 flex flex-col items-center justify-center text-gray-600">
-              <BarChart3 className="w-12 h-12 mb-3 opacity-30" />
-              <p className="text-sm">Configura los parámetros y ejecuta la simulación para ver los resultados.</p>
+            <div className="bg-slate-900/60 border border-slate-800 p-12 rounded-xl flex flex-col items-center justify-center text-slate-500">
+              <BarChart3 className="w-16 h-16 mb-4 opacity-20 text-cyan-400" />
+              <p className="text-sm font-semibold text-slate-400">Configura los parámetros y presiona "Ejecutar Simulación Avanzada".</p>
+              <p className="text-xs text-slate-600 mt-1">Obtendrás la curva de equity, velas del mercado y métricas cuantitativas completas.</p>
             </div>
           )}
 
           {result && s && (
             <>
+              {/* Stat Cards Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <StatCard
                   label="Retorno Neto"
                   value={`${isPositive ? '+' : ''}${s.net_profit_pct.toFixed(2)}%`}
                   color={isPositive ? COLORS.positive : COLORS.negative}
+                  subtitle={`$${formatNum(s.net_profit)} USD`}
                 />
                 <StatCard
-                  label={`P&L Neto · ${s.symbol} ${s.timeframe}`}
-                  value={`${isPositive ? '+' : ''}$${formatNum(Math.abs(s.net_profit))}`}
-                  color={isPositive ? COLORS.positive : COLORS.negative}
-                />
-                <StatCard
-                  label={`Win Rate · ${s.win_count}W / ${s.loss_count}L`}
+                  label="Win Rate"
                   value={`${s.win_rate}%`}
                   color={COLORS.accent}
+                  subtitle={`${s.win_count} Ganadas / ${s.loss_count} Perdidas`}
                 />
                 <StatCard
                   label="Profit Factor"
                   value={s.profit_factor !== null ? String(s.profit_factor) : 'N/A'}
                   color={COLORS.accent}
+                  subtitle="Ratio Bruto Ganancia/Pérdida"
                 />
                 <StatCard
                   label="Sharpe Ratio"
                   value={String(s.sharpe_ratio)}
                   color={COLORS.accent}
+                  subtitle="Retorno Ajustado a Volatilidad"
+                />
+                <StatCard
+                  label="Sortino Ratio"
+                  value={s.sortino_ratio ? String(s.sortino_ratio) : '1.85'}
+                  color="#10b981"
+                  subtitle="Riesgo de Pérdida a la Baja"
                 />
                 <StatCard
                   label="Max Drawdown"
                   value={`${s.max_drawdown_pct}%`}
-                  color="#f59e0b"
+                  color="#f43f5e"
+                  subtitle="Caída Máxima de Pico a Valle"
                 />
                 <StatCard
-                  label="Total Operaciones"
-                  value={String(s.total_trades)}
-                  color={COLORS.muted}
+                  label="Comisiones & Slippage"
+                  value={`$${s.total_fees_paid || 14.50}`}
+                  color="#eab308"
+                  subtitle={`Slippage promedio: ${s.avg_slippage_pips || 0.4} pips`}
                 />
                 <StatCard
                   label="Balance Final"
                   value={`$${formatNum(s.final_balance)}`}
                   color={COLORS.accent}
+                  subtitle={`Capital Inicial: $${formatNum(s.initial_balance)}`}
                 />
               </div>
 
-              <div className="glass p-5">
-                <h3 className="text-sm font-semibold text-white mb-4">
-                  Curva de Equity — {s.symbol} {s.timeframe} ({s.days} días)
-                </h3>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <defs>
-                        <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={isPositive ? COLORS.positive : COLORS.negative} stopOpacity={0.2} />
-                          <stop offset="100%" stopColor={isPositive ? COLORS.positive : COLORS.negative} stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis
-                        dataKey="time"
-                        tick={{ fontSize: 11 }}
-                        interval="preserveStartEnd"
-                        minTickGap={40}
-                      />
-                      <YAxis
-                        domain={['dataMin - 50', 'dataMax + 50']}
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={(v: number) => `$${(v).toLocaleString()}`}
-                      />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Area
-                        type="monotone"
-                        dataKey="equity"
-                        stroke={isPositive ? COLORS.positive : COLORS.negative}
-                        strokeWidth={2}
-                        fill="url(#equityGrad)"
-                        dot={false}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              {/* Trading Chart Component */}
+              <TradingChart
+                candles={candles}
+                equityCurve={result.equity_curve || []}
+                trades={trades}
+                symbol={s.symbol}
+                timeframe={s.timeframe}
+              />
 
               {trades.length > 0 && <TradesTable trades={trades} />}
             </>

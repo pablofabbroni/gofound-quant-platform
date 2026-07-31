@@ -104,6 +104,16 @@ export interface BacktestRequest {
   selected_analysts?: string[];
 }
 
+export interface CandleData {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  signal?: 'BUY' | 'SELL' | null;
+}
+
 export interface BacktestSummary {
   symbol: string;
   timeframe: string;
@@ -119,7 +129,11 @@ export interface BacktestSummary {
   win_rate: number;
   profit_factor: number | null;
   sharpe_ratio: number;
+  sortino_ratio?: number;
+  calmar_ratio?: number;
   max_drawdown_pct: number;
+  total_fees_paid?: number;
+  avg_slippage_pips?: number;
 }
 
 export interface BacktestTrade {
@@ -136,12 +150,14 @@ export interface BacktestTrade {
 export interface EquityPoint {
   time: string;
   equity: number;
+  drawdown_pct?: number;
 }
 
 export interface BacktestResponse {
   summary: BacktestSummary;
   trades: BacktestTrade[];
   equity_curve: EquityPoint[];
+  candles?: CandleData[];
 }
 
 export interface AnalystParamItem {
@@ -176,6 +192,7 @@ export interface LabExperimentItem {
   sharpe_ratio: number;
   max_drawdown_pct: number;
   status: string;
+  reasoning?: string;
   created_at: string;
 }
 
@@ -190,4 +207,20 @@ export interface RunHypothesisRequest {
   timeframe: string;
   days: number;
   param_variations?: Record<string, string>[];
+  reasoning?: string;
+}
+
+export interface AutoAgentStatusResponse {
+  status: string;
+  scheduler_running: boolean;
+  next_scheduled_run: string | null;
+  active_ai_provider: string;
+  provider_endpoint: string;
+  latest_run_info: {
+    last_run: string | null;
+    active_provider: string;
+    analysts_tested: string[];
+    applied_experiments: any[];
+    log_summary: string;
+  };
 }

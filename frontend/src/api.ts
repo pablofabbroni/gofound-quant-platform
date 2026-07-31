@@ -14,6 +14,7 @@ import type {
   UpdateAnalystParamsRequest,
   LabExperimentsResponse,
   RunHypothesisRequest,
+  AutoAgentStatusResponse,
 } from './types';
 
 const BASE = '';
@@ -105,6 +106,7 @@ export const api = {
         `/api/lab/experiments/${id}/apply`,
         { method: 'POST' }
       ),
+    getAgentStatus: () => request<AutoAgentStatusResponse>('/api/lab/agent/status'),
     runAutoAgent: () =>
       request<{ status: string; message: string }>(
         '/api/lab/agent/run-auto-research',

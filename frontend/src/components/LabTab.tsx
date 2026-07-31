@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Bot, Zap, Play, CheckCircle2 } from 'lucide-react';
-import type { LabExperimentItem } from '../types';
+import { Bot, Zap, CheckCircle2, Cpu, Clock, Activity } from 'lucide-react';
+import type { LabExperimentItem, AutoAgentStatusResponse } from '../types';
 
 const SYMBOLS = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'GBPJPY'];
 const TIMEFRAMES = ['M15', 'H1', 'H4'];
@@ -9,6 +9,7 @@ const ANALYSTS = ['Quant-bb', 'Trend-Aligner', 'RSI-Divergence', 'ICT-Engine', '
 
 export default function LabTab() {
   const [experiments, setExperiments] = useState<LabExperimentItem[]>([]);
+  const [agentStatus, setAgentStatus] = useState<AutoAgentStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [analystName, setAnalystName] = useState('Quant-bb');
   const [symbol, setSymbol] = useState('EURUSD');
@@ -24,8 +25,12 @@ export default function LabTab() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.lab.getExperiments();
-      setExperiments(res.data);
+      const [expRes, agentRes] = await Promise.allSettled([
+        api.lab.getExperiments(),
+        api.lab.getAgentStatus()
+      ]);
+      if (expRes.status === 'fulfilled') setExperiments(expRes.value.data);
+      if (agentRes.status === 'fulfilled') setAgentStatus(agentRes.value);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -63,7 +68,8 @@ export default function LabTab() {
     setError('');
     try {
       const res = await api.lab.runAutoAgent();
-      setMessage(res.message || 'Ciclo de investigación autónoma iniciado por el agente IA.');
+      setMessage(res.message || 'Ciclo de investigación autónoma iniciado por el agente IA en segundo plano.');
+      setTimeout(() => fetchExperiments(), 3000);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -101,10 +107,50 @@ export default function LabTab() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 transition-colors border border-indigo-500/30"
           >
             <Bot className="w-4 h-4" />
-            {runningAgent ? 'Iniciando Agente...' : '🤖 Auto-Investigador (5 Analistas)'}
+            {runningAgent ? 'Ejecutando Agente...' : '🤖 Disparar Auto-Investigador'}
           </button>
         </div>
       </div>
+
+      {/* Auto-Investigator Live Status Badge & Provider Card */}
+      {agentStatus && (
+        <div className="glass p-5 grid grid-cols-1 md:grid-cols-3 gap-4 border border-indigo-500/20">
+          <div className="flex items-start gap-3">
+            <Cpu className="w-5 h-5 text-indigo-400 mt-0.5" />
+            <div>
+              <span className="text-[11px] text-gray-400 uppercase font-medium">Proveedor de IA Activo</span>
+              <div className="text-sm font-semibold text-white mt-0.5 flex items-center gap-2">
+                {agentStatus.active_ai_provider}
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </div>
+              <span className="text-[10px] text-gray-500 font-mono">{agentStatus.provider_endpoint}</span>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Clock className="w-5 h-5 text-cyan-400 mt-0.5" />
+            <div>
+              <span className="text-[11px] text-gray-400 uppercase font-medium">Programador de Fondo (Servidor 24/7)</span>
+              <div className="text-sm font-semibold text-white mt-0.5">
+                {agentStatus.scheduler_running ? '🟢 En Ejecución Continuada (c/6h)' : '⏸️ Inactivo'}
+              </div>
+              <span className="text-[10px] text-gray-400">
+                Próximo ciclo: {agentStatus.next_scheduled_run ? new Date(agentStatus.next_scheduled_run).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : 'Pendiente'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Activity className="w-5 h-5 text-emerald-400 mt-0.5" />
+            <div>
+              <span className="text-[11px] text-gray-400 uppercase font-medium">Último Hallazgo del Agente</span>
+              <div className="text-xs text-gray-300 mt-0.5 line-clamp-2">
+                {agentStatus.latest_run_info?.log_summary || 'Sin ejecuciones registradas'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {message && (
         <div className="glass p-4 text-emerald-400 text-sm border border-emerald-500/20">
@@ -120,7 +166,7 @@ export default function LabTab() {
 
       {/* Config Form Card */}
       <div className="glass p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-white">Configurar Nueva Hipótesis de Investigación</h3>
+        <h3 className="text-sm font-semibold text-white">Configurar Nueva Hipótesis de Investigación (Manual)</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
           <div>
             <label className="block text-xs text-gray-400 mb-1">Analista a Investigar</label>
@@ -200,6 +246,7 @@ export default function LabTab() {
                   <th className="px-3 py-2">Analista</th>
                   <th className="px-3 py-2">Activo / TF</th>
                   <th className="px-3 py-2">Parámetros Ganadores</th>
+                  <th className="px-3 py-2">Razonamiento IA</th>
                   <th className="px-3 py-2">Trades</th>
                   <th className="px-3 py-2">Win Rate</th>
                   <th className="px-3 py-2">P&L (%)</th>
@@ -220,6 +267,9 @@ export default function LabTab() {
                     <td className="px-3 py-3 text-gray-300 font-mono">{exp.symbol} {exp.timeframe}</td>
                     <td className="px-3 py-3 text-gray-400 font-mono text-[10px]">
                       {JSON.stringify(exp.params_tested)}
+                    </td>
+                    <td className="px-3 py-3 text-gray-400 max-w-[220px] truncate text-[10px]" title={exp.reasoning || 'Generación automática'}>
+                      {exp.reasoning || 'Generación adaptativa'}
                     </td>
                     <td className="px-3 py-3 text-gray-300">{exp.total_trades}</td>
                     <td className="px-3 py-3 text-cyan-300 font-semibold">{exp.win_rate}%</td>
