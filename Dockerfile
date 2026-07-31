@@ -14,7 +14,7 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ ./backend/
-RUN cp backend/main.py . && cp backend/auth.py . && cp backend/database.py .
+RUN cp backend/*.py .
 
 COPY --from=frontend /build/dist ./static
 
