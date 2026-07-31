@@ -1194,6 +1194,10 @@ def run_backtest(payload: BacktestRequest, db: Session = Depends(get_db), email:
 
         # Synthetic candle generator fallback if DB candles are empty or insufficient
         if not candles or len(candles) < 55:
+            # Seed random generator deterministically using symbol & timeframe so simulation is 100% static
+            seed_val = abs(hash(f"{payload.symbol}_{payload.timeframe}_{payload.days}")) % (2**32 - 1)
+            np.random.seed(seed_val)
+            
             base_price = 1.0850 if "EUR" in payload.symbol else (2350.0 if "XAU" in payload.symbol else 150.0)
             volatility = 0.0015
             current_t = datetime.utcnow() - timedelta(days=payload.days)
