@@ -325,14 +325,9 @@ export default function BacktestTab() {
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> BD Producción TimescaleDB (PostgreSQL)
                     </span>
                   )}
-                  {s.data_source === 'REAL_SQLITE' && (
+                  {(!s.data_source || s.data_source === 'REAL_SQLITE') && (
                     <span className="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> BD Real Local SQLite (3.35M Velas Históricas)
-                    </span>
-                  )}
-                  {(!s.data_source || s.data_source === 'SYNTHETIC_DETERMINISTIC') && (
-                    <span className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-400" /> Velas Sintéticas Estáticas (Par sin datos en BD)
                     </span>
                   )}
                 </div>

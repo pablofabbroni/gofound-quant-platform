@@ -1189,37 +1189,16 @@ def run_backtest(payload: BacktestRequest, db: Session = Depends(get_db), email:
         candles_limit = max(100, payload.days * 96)
         try:
             candles, data_source = fetch_candles(payload.symbol, payload.timeframe, candles_limit)
-        except Exception:
-            candles, data_source = [], "SYNTHETIC_DETERMINISTIC"
+        except Exception as e:
+            candles, data_source = [], "NO_DATA"
 
-        # Synthetic candle generator fallback if DB candles are empty or insufficient
+        # Strict Quantitative Integrity: DO NOT generate fake synthetic candles.
+        # Demand 100% real historical candles from database.
         if not candles or len(candles) < 55:
-            data_source = "SYNTHETIC_DETERMINISTIC"
-            # Seed random generator deterministically using symbol & timeframe so simulation is 100% static
-            seed_val = abs(hash(f"{payload.symbol}_{payload.timeframe}_{payload.days}")) % (2**32 - 1)
-            np.random.seed(seed_val)
-            
-            base_price = 1.0850 if "EUR" in payload.symbol else (2350.0 if "XAU" in payload.symbol else 150.0)
-            volatility = 0.0015
-            current_t = datetime.utcnow() - timedelta(days=payload.days)
-            candles = []
-            cur_p = base_price
-            for i in range(max(120, payload.days * 96)):
-                change = cur_p * np.random.normal(0, volatility)
-                open_p = cur_p
-                close_p = open_p + change
-                high_p = max(open_p, close_p) + abs(np.random.normal(0, volatility * 0.5 * cur_p))
-                low_p = min(open_p, close_p) - abs(np.random.normal(0, volatility * 0.5 * cur_p))
-                vol = int(np.random.randint(100, 1500))
-                candles.append({
-                    "time": current_t,
-                    "open": round(open_p, digits),
-                    "high": round(high_p, digits),
-                    "low": round(low_p, digits),
-                    "close": round(close_p, digits),
-                    "volume": vol
-                })
-                current_t += timedelta(minutes=15)
+            raise HTTPException(
+                status_code=422,
+                detail=f"Sin datos históricos para {payload.symbol} ({payload.timeframe}) en la base de datos ({len(candles)} velas encontradas). Por favor selecciona un par con cobertura real (ej. EURUSD, GBPUSD, USDJPY, USDCAD, EURJPY) o descarga el historial desde MT5."
+            )
 
         balance = payload.balance
         risk_pct = payload.risk / 100.0
