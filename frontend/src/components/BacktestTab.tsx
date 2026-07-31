@@ -5,7 +5,19 @@ import { TradingChart } from './TradingChart';
 import type { BacktestResponse } from '../types';
 
 const SYMBOLS = [
-  'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'GBPJPY', 'EURCAD', 'XAUUSD', 'XAGUSD',
+  { code: 'EURUSD', name: 'EURUSD · Datos BD Reales', hasData: true },
+  { code: 'GBPUSD', name: 'GBPUSD · Datos BD Reales', hasData: true },
+  { code: 'USDJPY', name: 'USDJPY · Datos BD Reales', hasData: true },
+  { code: 'AUDUSD', name: 'AUDUSD · Datos BD Reales', hasData: true },
+  { code: 'GBPJPY', name: 'GBPJPY · Datos BD Reales', hasData: true },
+  { code: 'EURJPY', name: 'EURJPY · Datos BD Reales', hasData: true },
+  { code: 'EURGBP', name: 'EURGBP · Datos BD Reales', hasData: true },
+  { code: 'USDCAD', name: 'USDCAD · Datos BD Reales', hasData: true },
+  { code: 'USDCHF', name: 'USDCHF · Datos BD Reales', hasData: true },
+  { code: 'NZDUSD', name: 'NZDUSD · Datos BD Reales', hasData: true },
+  { code: 'EURCAD', name: 'EURCAD · (Pendiente MT5)', hasData: false },
+  { code: 'XAUUSD', name: 'XAUUSD (Oro) · (Pendiente MT5)', hasData: false },
+  { code: 'XAGUSD', name: 'XAGUSD (Plata) · (Pendiente MT5)', hasData: false },
 ];
 
 const TIMEFRAMES = ['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1'];
@@ -176,8 +188,13 @@ export default function BacktestTab() {
               onChange={(e) => setSymbol(e.target.value)}
               className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors"
             >
-              {SYMBOLS.map((s) => <option key={s} value={s}>{s}</option>)}
+              {SYMBOLS.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
             </select>
+            {SYMBOLS.find(s => s.code === symbol)?.hasData === false && (
+              <p className="text-[10px] text-amber-400 mt-1 font-mono">
+                ⚠️ Par sin datos en BD local. Simulación con velas estáticas.
+              </p>
+            )}
           </div>
 
           <div>
