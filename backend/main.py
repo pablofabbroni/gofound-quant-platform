@@ -140,16 +140,20 @@ def format_iso(dt_val):
         dt_str = dt_str.replace(" ", "T")
     return dt_str
 
-def get_active_params_dict(db: Session) -> Dict[str, Dict[str, str]]:
-    """Fetch current analyst parameters from database."""
-    params_rows = db.query(AnalystParam).all()
+def get_active_params_dict(db: Session = None) -> Dict[str, Dict[str, str]]:
+    """Fetch current analyst parameters from database with default fallbacks."""
     result = {}
-    for p in params_rows:
-        if p.analyst_name not in result:
-            result[p.analyst_name] = {}
-        result[p.analyst_name][p.param_key] = p.param_value
+    if db is not None:
+        try:
+            params_rows = db.query(AnalystParam).all()
+            for p in params_rows:
+                if p.analyst_name not in result:
+                    result[p.analyst_name] = {}
+                result[p.analyst_name][p.param_key] = p.param_value
+        except Exception:
+            pass
     
-    # Fallback to defaults if missing in DB
+    # Fallback to defaults if missing in DB or if db is None
     for default_p in DEFAULT_ANALYST_PARAMS:
         aname = default_p["analyst_name"]
         pkey = default_p["param_key"]
