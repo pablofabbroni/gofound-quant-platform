@@ -134,6 +134,7 @@ export interface BacktestSummary {
   max_drawdown_pct: number;
   total_fees_paid?: number;
   avg_slippage_pips?: number;
+  data_source?: string;
 }
 
 export interface BacktestTrade {

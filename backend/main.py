@@ -82,11 +82,11 @@ def fetch_symbols_list() -> List[Dict]:
         {"id": 8, "symbol": "XAGUSD"},
     ]
 
-def fetch_candles(symbol: str, timeframe: str, limit: int) -> List[Dict]:
+def fetch_candles(symbol: str, timeframe: str, limit: int) -> Tuple[List[Dict], str]:
     """
     Fetches candles for backtesting/analysis.
     Tries TimescaleDB (PostgreSQL) first. If unavailable or empty, falls back to local SQLite.
-    Returns candles ordered from oldest to newest (ascending time).
+    Returns (candles_list, data_source_name).
     """
     # 1. Try TimescaleDB / PostgreSQL
     try:
@@ -104,7 +104,7 @@ def fetch_candles(symbol: str, timeframe: str, limit: int) -> List[Dict]:
             rows = cur.fetchall()
         conn.close()
         if rows:
-            return list(reversed([dict(r) for r in rows]))
+            return list(reversed([dict(r) for r in rows])), "REAL_TIMESCALEDB"
     except Exception:
         pass
 
@@ -123,11 +123,11 @@ def fetch_candles(symbol: str, timeframe: str, limit: int) -> List[Dict]:
             """, (symbol, timeframe, limit)).fetchall()
             s_conn.close()
             if rows:
-                return list(reversed([dict(r) for r in rows]))
+                return list(reversed([dict(r) for r in rows])), "REAL_SQLITE"
         except Exception:
             pass
 
-    return []
+    return [], "SYNTHETIC_DETERMINISTIC"
 
 
 def format_iso(dt_val):
@@ -210,7 +210,7 @@ def compute_real_market_decisions(params_dict: Dict[str, Dict[str, str]] = None)
         for sym in symbols:
             sym_name = sym["symbol"]
             for tf_code in tf_codes:
-                candles_asc = fetch_candles(sym_name, tf_code, 60)
+                candles_asc, _ = fetch_candles(sym_name, tf_code, 60)
                 if len(candles_asc) < 30:
                     continue
 
@@ -1188,12 +1188,13 @@ def run_backtest(payload: BacktestRequest, db: Session = Depends(get_db), email:
         # M15 ~ 96 candles/day, M5 ~ 288, H1 ~ 24, D1 ~ 1
         candles_limit = max(100, payload.days * 96)
         try:
-            candles = fetch_candles(payload.symbol, payload.timeframe, candles_limit)
+            candles, data_source = fetch_candles(payload.symbol, payload.timeframe, candles_limit)
         except Exception:
-            candles = []
+            candles, data_source = [], "SYNTHETIC_DETERMINISTIC"
 
         # Synthetic candle generator fallback if DB candles are empty or insufficient
         if not candles or len(candles) < 55:
+            data_source = "SYNTHETIC_DETERMINISTIC"
             # Seed random generator deterministically using symbol & timeframe so simulation is 100% static
             seed_val = abs(hash(f"{payload.symbol}_{payload.timeframe}_{payload.days}")) % (2**32 - 1)
             np.random.seed(seed_val)
@@ -1445,6 +1446,7 @@ def run_backtest(payload: BacktestRequest, db: Session = Depends(get_db), email:
                 "max_drawdown_pct": round(max_dd, 2),
                 "total_fees_paid": round(total_fees, 2),
                 "avg_slippage_pips": SLIPPAGE_PIPS,
+                "data_source": data_source,
             },
             "trades": closed_trades[-50:],
             "equity_curve": eq_downsampled,

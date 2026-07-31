@@ -316,6 +316,29 @@ export default function BacktestTab() {
 
           {result && s && (
             <>
+              {/* Data Source Badge */}
+              <div className="flex items-center justify-between bg-slate-900/90 border border-slate-800 p-3 rounded-xl shadow">
+                <div className="flex items-center gap-2 text-xs font-mono">
+                  <span className="text-slate-400 font-sans">Origen de Datos Evaluados:</span>
+                  {s.data_source === 'REAL_TIMESCALEDB' && (
+                    <span className="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> BD Producción TimescaleDB (PostgreSQL)
+                    </span>
+                  )}
+                  {s.data_source === 'REAL_SQLITE' && (
+                    <span className="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> BD Real Local SQLite (3.35M Velas Históricas)
+                    </span>
+                  )}
+                  {(!s.data_source || s.data_source === 'SYNTHETIC_DETERMINISTIC') && (
+                    <span className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400" /> Velas Sintéticas Estáticas (Par sin datos en BD)
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-slate-500 font-mono">Lógica 100% Determinista y Estática</span>
+              </div>
+
               {/* Stat Cards Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <StatCard
