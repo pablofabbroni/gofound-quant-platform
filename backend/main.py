@@ -1183,6 +1183,8 @@ def run_backtest(payload: BacktestRequest, db: Session = Depends(get_db), email:
     ict_p = params_dict.get("ICT-Engine", {})
     ob_lookback_ict = int(float(ict_p.get("ob_lookback", 20)))
 
+    selected = payload.selected_analysts or ["Quant-bb", "Trend-Aligner", "RSI-Divergence", "ICT-Engine", "News-Sentiment"]
+
     # Query economic calendar events for News-Sentiment veto
     econ_events = []
     if "News-Sentiment" in selected:

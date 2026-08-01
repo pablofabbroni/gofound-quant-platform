@@ -108,6 +108,14 @@ def init_db():
     try:
         Base.metadata.create_all(bind=engine)
         db = SessionLocal()
+
+        # Add missing column if table was created previously without reasoning
+        try:
+            db.execute("ALTER TABLE lab_experiments ADD COLUMN IF NOT EXISTS reasoning VARCHAR(1000);")
+            db.commit()
+        except Exception:
+            db.rollback()
+
         admin_email = "admin@gofound.tech"
         existing = db.query(User).filter(User.email == admin_email).first()
         if not existing:
