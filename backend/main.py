@@ -1183,7 +1183,30 @@ def run_backtest(payload: BacktestRequest, db: Session = Depends(get_db), email:
     ict_p = params_dict.get("ICT-Engine", {})
     ob_lookback_ict = int(float(ict_p.get("ob_lookback", 20)))
 
-    selected = payload.selected_analysts or ["Quant-bb", "Trend-Aligner", "RSI-Divergence", "ICT-Engine", "News-Sentiment"]
+    # Query economic calendar events for News-Sentiment veto
+    econ_events = []
+    if "News-Sentiment" in selected:
+        news_p = params_dict.get("News-Sentiment", {})
+        veto_window_mins = int(float(news_p.get("veto_window_mins", 60)))
+        curr_map = {
+            "EURUSD": ["EUR", "USD"], "GBPUSD": ["GBP", "USD"], "USDJPY": ["USD", "JPY"],
+            "AUDUSD": ["AUD", "USD"], "USDCAD": ["USD", "CAD"], "EURJPY": ["EUR", "JPY"],
+            "GBPJPY": ["GBP", "JPY"], "XAUUSD": ["USD"], "XAGUSD": ["USD"]
+        }
+        target_currs = curr_map.get(payload.symbol, ["USD"])
+        try:
+            conn_ts = get_ts_conn()
+            with conn_ts.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur_ts:
+                cur_ts.execute("""
+                    SELECT event_time, currency, impact, event_name
+                    FROM quant_market.economic_events
+                    WHERE currency = ANY(%s) AND impact IN ('HIGH', 'MEDIUM')
+                    ORDER BY event_time ASC;
+                """, (target_currs,))
+                econ_events = [dict(r) for r in cur_ts.fetchall()]
+            conn_ts.close()
+        except Exception as e:
+            print("[WARN] Could not query economic events for backtest:", e)
 
     try:
         contract_size = 100000.0 if ("USD" in payload.symbol or "EUR" in payload.symbol) else 100.0
@@ -1316,9 +1339,36 @@ def run_backtest(payload: BacktestRequest, db: Session = Depends(get_db), email:
                 else: analyst_votes["ICT-Engine"] = "NEUTRAL"
 
             if "News-Sentiment" in selected:
-                if c_price > ema_fast_val and rsi < 60: analyst_votes["News-Sentiment"] = "BUY"
-                elif c_price < ema_fast_val and rsi > 40: analyst_votes["News-Sentiment"] = "SELL"
-                else: analyst_votes["News-Sentiment"] = "NEUTRAL"
+                has_veto = False
+                c_dt_raw = row["time"]
+                c_dt = c_dt_raw.replace(tzinfo=None) if hasattr(c_dt_raw, 'tzinfo') and c_dt_raw.tzinfo else c_dt_raw
+                if isinstance(c_dt, str):
+                    try:
+                        c_dt = datetime.fromisoformat(c_dt.replace("Z", "+00:00")).replace(tzinfo=None)
+                    except Exception:
+                        pass
+                for ev in econ_events:
+                    ev_dt_raw = ev["event_time"]
+                    ev_dt = ev_dt_raw.replace(tzinfo=None) if hasattr(ev_dt_raw, 'tzinfo') and ev_dt_raw.tzinfo else ev_dt_raw
+                    if isinstance(ev_dt, str):
+                        try:
+                            ev_dt = datetime.fromisoformat(ev_dt.replace("Z", "+00:00")).replace(tzinfo=None)
+                        except Exception:
+                            pass
+                    if isinstance(c_dt, datetime) and isinstance(ev_dt, datetime):
+                        diff_m = abs((ev_dt - c_dt).total_seconds()) / 60.0
+                        if diff_m <= veto_window_mins:
+                            has_veto = True
+                            break
+
+                if has_veto:
+                    analyst_votes["News-Sentiment"] = "VETO"
+                else:
+                    analyst_votes["News-Sentiment"] = "CLEAR"
+
+            # Strict VETO Check: If any analyst votes VETO, block all trade entries
+            if any(v == "VETO" for v in analyst_votes.values()):
+                continue
 
             buys = [v for v in analyst_votes.values() if v == "BUY"]
             sells = [v for v in analyst_votes.values() if v == "SELL"]

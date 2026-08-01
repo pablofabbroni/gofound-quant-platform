@@ -20,7 +20,23 @@ import urllib.error
 import datetime
 from typing import Dict, List, Tuple, Any, Optional
 
-API_BASE = os.environ.get("API_BASE", "http://127.0.0.1:8000")
+def get_api_base() -> str:
+    env_url = os.environ.get("API_BASE")
+    if env_url:
+        return env_url.rstrip("/")
+    
+    candidates = ["http://127.0.0.1:80", "http://127.0.0.1:8000", "http://127.0.0.1"]
+    for url in candidates:
+        try:
+            req = urllib.request.Request(f"{url}/api/status", method="GET")
+            res = urllib.request.urlopen(req, timeout=1)
+            if res.status == 200:
+                return url
+        except Exception:
+            pass
+    return "http://127.0.0.1:8000"
+
+API_BASE = get_api_base()
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 
 # Global state tracker for latest agent run status
@@ -33,8 +49,9 @@ LATEST_RESEARCH_STATUS = {
 }
 
 def get_auth_token(email="admin@gofound.tech", password="AdminQuant2026!") -> Optional[str]:
+    api_url = get_api_base()
     req = urllib.request.Request(
-        f"{API_BASE}/api/auth/login",
+        f"{api_url}/api/auth/login",
         data=json.dumps({"email": email, "password": password}).encode("utf-8"),
         headers={"Content-Type": "application/json"}
     )
@@ -173,6 +190,7 @@ def run_agent_research_cycle() -> Dict[str, Any]:
     print("[AGENTE IA AUTÓNOMO] INICIANDO CICLO DE RESEARCH & AUTO-OPTIMIZACIÓN")
     print("=" * 70)
 
+    api_base = get_api_base()
     token = get_auth_token()
     headers = {"Content-Type": "application/json"}
     if token:
@@ -191,7 +209,7 @@ def run_agent_research_cycle() -> Dict[str, Any]:
         # 1. Fetch current active parameters from backend
         current_params = {}
         try:
-            req_params = urllib.request.Request(f"{API_BASE}/api/analysts/parameters", headers=headers)
+            req_params = urllib.request.Request(f"{api_base}/api/analysts/parameters", headers=headers)
             res_params = urllib.request.urlopen(req_params, timeout=5)
             params_list = json.loads(res_params.read().decode("utf-8")).get("data", [])
             for p in params_list:
@@ -213,7 +231,7 @@ def run_agent_research_cycle() -> Dict[str, Any]:
 
         try:
             req_base = urllib.request.Request(
-                f"{API_BASE}/api/lab/experiments/run-hypothesis",
+                f"{api_base}/api/lab/experiments/run-hypothesis",
                 method="POST",
                 data=json.dumps(baseline_req).encode("utf-8"),
                 headers=headers
@@ -250,7 +268,7 @@ def run_agent_research_cycle() -> Dict[str, Any]:
 
         try:
             req_hypo = urllib.request.Request(
-                f"{API_BASE}/api/lab/experiments/run-hypothesis",
+                f"{api_base}/api/lab/experiments/run-hypothesis",
                 method="POST",
                 data=json.dumps(hypo_req).encode("utf-8"),
                 headers=headers
