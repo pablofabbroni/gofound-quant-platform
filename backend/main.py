@@ -1506,14 +1506,10 @@ def get_operations_summary(db: Session = Depends(get_db)):
     """Calcula métricas de rendimiento en tiempo real de las operaciones del sistema."""
     try:
         trades = db.query(TradeOperation).all()
-        
-        # Si la base de datos no tiene operaciones aún, inicializar semillas demostrativas
-        if not trades:
-            seed_demo_operations(db)
-            trades = db.query(TradeOperation).all()
 
         closed_trades = [t for t in trades if t.status in ("CLOSED_TP", "CLOSED_SL")]
         open_trades = [t for t in trades if t.status == "OPEN"]
+
         
         wins = [t for t in closed_trades if t.pnl_usd > 0]
         losses = [t for t in closed_trades if t.pnl_usd < 0]
