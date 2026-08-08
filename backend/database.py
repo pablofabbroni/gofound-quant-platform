@@ -76,6 +76,27 @@ class LabExperiment(Base):
     reasoning = Column(String(1000), nullable=True) # Textual AI reasoning/justification
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class TradeOperation(Base):
+    __tablename__ = "trade_operations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(String(50), unique=True, index=True) # ID de ticket MT5 o correlativo
+    symbol = Column(String(20), nullable=False) # EURUSD, GBPUSD, XAUUSD
+    timeframe = Column(String(10), nullable=False, default="M15")
+    operation_type = Column(String(10), nullable=False) # BUY / SELL
+    entry_price = Column(Float, nullable=False)
+    exit_price = Column(Float, nullable=True)
+    stop_loss = Column(Float, nullable=False)
+    take_profit = Column(Float, nullable=False)
+    lot_size = Column(Float, default=0.10)
+    pnl_usd = Column(Float, default=0.0)
+    pnl_pips = Column(Float, default=0.0)
+    status = Column(String(20), default="OPEN") # OPEN, CLOSED_TP, CLOSED_SL, CANCELLED
+    committee_consensus = Column(String(500), nullable=True) # Resumen de analistas que apoyaron
+    ai_reasoning = Column(String(1000), nullable=True) # Justificación/dictamen de Gemini 3.6 Flash
+    opened_at = Column(DateTime, default=datetime.utcnow)
+    closed_at = Column(DateTime, nullable=True)
+
 DEFAULT_ANALYST_PARAMS = [
     # Quant-bb
     {"analyst_name": "Quant-bb", "param_key": "rsi_period", "param_value": "14", "description": "Período del oscilador RSI (barras)"},
@@ -111,10 +132,12 @@ def init_db():
 
         # Add missing column if table was created previously without reasoning
         try:
-            db.execute("ALTER TABLE lab_experiments ADD COLUMN IF NOT EXISTS reasoning VARCHAR(1000);")
+            from sqlalchemy import text
+            db.execute(text("ALTER TABLE lab_experiments ADD COLUMN reasoning VARCHAR(1000);"))
             db.commit()
         except Exception:
             db.rollback()
+
 
         admin_email = "admin@gofound.tech"
         existing = db.query(User).filter(User.email == admin_email).first()

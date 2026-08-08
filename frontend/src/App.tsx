@@ -9,8 +9,9 @@ import CoverageTab from './components/CoverageTab';
 import BacktestTab from './components/BacktestTab';
 import ParametersTab from './components/ParametersTab';
 import LabTab from './components/LabTab';
+import { OperationsTab } from './components/OperationsTab';
 
-type Tab = 'committee' | 'coverage' | 'backtest' | 'parameters' | 'lab';
+type Tab = 'committee' | 'operations' | 'coverage' | 'backtest' | 'parameters' | 'lab';
 
 export default function App() {
   const [user, setUser] = useState<UserResponse | null>(null);
@@ -58,6 +59,7 @@ export default function App() {
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'committee', label: 'Comité de Analistas' },
+    { key: 'operations', label: '📊 Operaciones & PnL' },
     { key: 'coverage', label: 'Cobertura de Datos' },
     { key: 'backtest', label: 'Laboratorio Backtest' },
     { key: 'parameters', label: 'Parámetros de Analistas' },
@@ -92,6 +94,7 @@ export default function App() {
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6">
         {tab === 'committee' && <CommitteeTab />}
+        {tab === 'operations' && <OperationsTab />}
         {tab === 'coverage' && <CoverageTab />}
         {tab === 'backtest' && <BacktestTab />}
         {tab === 'parameters' && <ParametersTab />}

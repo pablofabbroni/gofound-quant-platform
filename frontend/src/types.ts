@@ -225,3 +225,49 @@ export interface AutoAgentStatusResponse {
     log_summary: string;
   };
 }
+
+export interface TradeOperation {
+  id: number;
+  ticket_id: string;
+  symbol: string;
+  timeframe: string;
+  operation_type: 'BUY' | 'SELL';
+  entry_price: number;
+  exit_price: number | null;
+  stop_loss: number;
+  take_profit: number;
+  lot_size: number;
+  pnl_usd: number;
+  pnl_pips: number;
+  status: 'OPEN' | 'CLOSED_TP' | 'CLOSED_SL' | 'CANCELLED';
+  committee_consensus: string | null;
+  ai_reasoning: string | null;
+  opened_at: string;
+  closed_at: string | null;
+}
+
+export interface OperationsSummary {
+  initial_balance: number;
+  current_balance: number;
+  net_profit_usd: number;
+  net_profit_pct: number;
+  total_trades: number;
+  closed_trades: number;
+  open_trades: number;
+  win_count: number;
+  loss_count: number;
+  win_rate: number;
+  profit_factor: number;
+  total_pips: number;
+  max_drawdown_pct: number;
+  avg_risk_reward: number;
+}
+
+export interface OperationsSummaryResponse {
+  summary: OperationsSummary;
+}
+
+export interface OperationsListResponse {
+  data: TradeOperation[];
+}
+

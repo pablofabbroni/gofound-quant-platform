@@ -14,11 +14,19 @@ Este agente actúa como un científico de datos e investigador cuantitativo aut�
 """
 
 import os
+import sys
 import json
 import urllib.request
 import urllib.error
 import datetime
 from typing import Dict, List, Tuple, Any, Optional
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 
 def get_api_base() -> str:
     env_url = os.environ.get("API_BASE")
@@ -63,9 +71,22 @@ def get_auth_token(email="admin@gofound.tech", password="AdminQuant2026!") -> Op
         print(f"[WARN] No se pudo autenticar automáticamente el Agente de IA: {e}")
         return None
 
+from gemini_engine import query_gemini
+
 def detect_ai_provider() -> Tuple[str, str]:
-    """Detects available AI reasoning engine (Ollama Local, Cloud LLM, or Heuristic Adaptive)."""
-    # 1. Test Ollama Local Endpoint
+    """Detects available AI reasoning engine (Gemini Cloud API, Ollama Local, or Heuristic Adaptive)."""
+    # 1. Prioridad: Gemini Cloud API Key
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    if gemini_key:
+        model_name = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+        return f"Gemini Cloud API ({model_name})", "https://generativelanguage.googleapis.com"
+
+    # 2. Test OpenAI Cloud API Key
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    if openai_key:
+        return "OpenAI Cloud API", "https://api.openai.com"
+
+    # 3. Test Ollama Local Endpoint
     try:
         req = urllib.request.Request(f"{OLLAMA_URL}/api/tags", method="GET")
         res = urllib.request.urlopen(req, timeout=2)
@@ -74,15 +95,7 @@ def detect_ai_provider() -> Tuple[str, str]:
     except Exception:
         pass
 
-    # 2. Test Cloud API Key
-    openai_key = os.environ.get("OPENAI_API_KEY")
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    if openai_key:
-        return "OpenAI Cloud API", "https://api.openai.com"
-    if gemini_key:
-        return "Gemini Cloud API", "https://generativelanguage.googleapis.com"
-
-    # 3. Fallback to Quantitative Adaptive Engine
+    # 4. Fallback to Quantitative Adaptive Engine
     return "Motor Adaptativo Cuantitativo (Local)", "Heuristic-Grid-Search"
 
 def query_ollama_reasoning(prompt: str) -> Optional[str]:
@@ -120,18 +133,24 @@ def generate_hypotheses_and_reasoning(
         f"Parámetros vigentes actuales: {json.dumps(current_params)}. "
         f"Métricas actuales de rendimiento: Sharpe={baseline_metrics.get('sharpe_ratio', 0)}, "
         f"WinRate={baseline_metrics.get('win_rate', 0)}%, PnL={baseline_metrics.get('net_profit_pct', 0)}%. "
-        f"Genera una breve hipótesis de optimización de parámetros y devuelve sugerencias de ajuste en formato JSON."
+        f"Genera una breve hipótesis de optimización de parámetros de máximo 2 oraciones."
     )
 
     reasoning_text = ""
 
-    # Check Ollama if local provider is active
-    if "Ollama" in provider_name:
+    # 1. Check Gemini Cloud API
+    if "Gemini" in provider_name:
+        gemini_res = query_gemini(prompt_text)
+        if gemini_res.get("success"):
+            reasoning_text = f"🤖 [Razonamiento Gemini {gemini_res['model_used']}]: {gemini_res['text'].strip()[:350]}"
+
+    # 2. Check Ollama if local provider is active
+    if not reasoning_text and "Ollama" in provider_name:
         ollama_resp = query_ollama_reasoning(prompt_text)
         if ollama_resp:
             reasoning_text = f"🤖 [Razonamiento IA Ollama Local]: {ollama_resp.strip()[:350]}"
 
-    # Fallback reasoning narrative if Ollama did not return explicit text
+    # 3. Fallback reasoning narrative
     if not reasoning_text:
         reasoning_text = (
             f"🧠 [Razonamiento Adaptativo Cuantitativo]: Basado en el punto activo de {analyst_name} "

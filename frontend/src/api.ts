@@ -15,6 +15,8 @@ import type {
   LabExperimentsResponse,
   RunHypothesisRequest,
   AutoAgentStatusResponse,
+  OperationsSummaryResponse,
+  OperationsListResponse,
 } from './types';
 
 const BASE = '';
@@ -113,4 +115,14 @@ export const api = {
         { method: 'POST' }
       ),
   },
+  operations: {
+    getSummary: () => request<OperationsSummaryResponse>('/api/operations/summary'),
+    getList: (status_filter?: string) =>
+      request<OperationsListResponse>(
+        `/api/operations/list${status_filter ? `?status_filter=${status_filter}` : ''}`
+      ),
+    seedDemo: () =>
+      request<{ message: string }>('/api/operations/seed-demo', { method: 'POST' }),
+  },
 };
+
