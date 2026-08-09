@@ -15,16 +15,12 @@ def main():
     init_db()
     db = SessionLocal()
     
-    # Check if operations exist or seed
+    # Check if operations exist
     ops = db.query(TradeOperation).all()
-    if not ops:
-        print("Poblando operaciones demostrativas...")
-        seed_demo_operations(db)
-        ops = db.query(TradeOperation).all()
-        
     print(f"Total de operaciones registradas en DB: {len(ops)}")
     for op in ops:
         print(f" - [{op.ticket_id}] {op.symbol} {op.operation_type} @ {op.entry_price} | PnL: ${op.pnl_usd} | Status: {op.status}")
+
         
     db.close()
     print("\n[SUCCESS] Modelo e inicializador de operaciones verificado.")
