@@ -1592,115 +1592,6 @@ def get_operations_list(status_filter: Optional[str] = None, db: Session = Depen
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error listando operaciones: {str(e)}")
 
-def seed_demo_operations(db: Session):
-    """Puebla operaciones demostrativas realistas para el Dashboard de Rendimiento."""
-    try:
-        now = datetime.utcnow()
-        sample_ops = [
-            TradeOperation(
-                ticket_id="#10490",
-                symbol="EURUSD",
-                timeframe="M15",
-                operation_type="BUY",
-                entry_price=1.0850,
-                exit_price=None,
-                stop_loss=1.0825,
-                take_profit=1.0900,
-                lot_size=0.10,
-                pnl_usd=28.50,
-                pnl_pips=28.5,
-                status="OPEN",
-                committee_consensus="Quant-bb + Trend-Aligner + Gemini 3.6 OK",
-                ai_reasoning="Confluencia alcista en sobreventa RSI con tendencia M15 alineada y ausencia de veto macro.",
-                opened_at=now - timedelta(minutes=25),
-                closed_at=None
-            ),
-            TradeOperation(
-                ticket_id="#10489",
-                symbol="GBPUSD",
-                timeframe="M15",
-                operation_type="BUY",
-                entry_price=1.2680,
-                exit_price=1.2730,
-                stop_loss=1.2650,
-                take_profit=1.2730,
-                lot_size=0.15,
-                pnl_usd=75.00,
-                pnl_pips=50.0,
-                status="CLOSED_TP",
-                committee_consensus="ICT-Engine + RSI-Divergence + Gemini 3.6 OK",
-                ai_reasoning="Ruptura de FVG alcista validada por el comité con Target alcanzado en nivel de liquidez.",
-                opened_at=now - timedelta(hours=3),
-                closed_at=now - timedelta(hours=1)
-            ),
-            TradeOperation(
-                ticket_id="#10488",
-                symbol="EURUSD",
-                timeframe="M15",
-                operation_type="SELL",
-                entry_price=1.0890,
-                exit_price=1.0845,
-                stop_loss=1.0915,
-                take_profit=1.0845,
-                lot_size=0.10,
-                pnl_usd=45.00,
-                pnl_pips=45.0,
-                status="CLOSED_TP",
-                committee_consensus="Quant-bb + Trend-Aligner + Gemini 3.6 OK",
-                ai_reasoning="Cruce de EMA rápida/lenta con sobrecompra RSI. Ejecución limpia con TP tocado.",
-                opened_at=now - timedelta(hours=7),
-                closed_at=now - timedelta(hours=5)
-            ),
-            TradeOperation(
-                ticket_id="#10487",
-                symbol="USDJPY",
-                timeframe="M15",
-                operation_type="BUY",
-                entry_price=154.20,
-                exit_price=153.95,
-                stop_loss=153.95,
-                take_profit=154.70,
-                lot_size=0.10,
-                pnl_usd=-25.00,
-                pnl_pips=-25.0,
-                status="CLOSED_SL",
-                committee_consensus="Trend-Aligner + Gemini 3.6 OK",
-                ai_reasoning="Retroceso de volatilidad tocó Stop Loss ajustado por ATR (1.5x ATR). Capital preservado.",
-                opened_at=now - timedelta(hours=12),
-                closed_at=now - timedelta(hours=10)
-            ),
-            TradeOperation(
-                ticket_id="#10486",
-                symbol="XAUUSD",
-                timeframe="M15",
-                operation_type="BUY",
-                entry_price=2410.00,
-                exit_price=2425.00,
-                stop_loss=2400.00,
-                take_profit=2425.00,
-                lot_size=0.05,
-                pnl_usd=75.00,
-                pnl_pips=150.0,
-                status="CLOSED_TP",
-                committee_consensus="ICT-Engine + Trend-Aligner + Gemini 3.6 OK",
-                ai_reasoning="Rebote en Order Block alcista en Oro. Impulso fuerte directo hacia Take Profit.",
-                opened_at=now - timedelta(hours=18),
-                closed_at=now - timedelta(hours=15)
-            ),
-        ]
-        for op in sample_ops:
-            db.add(op)
-        db.commit()
-    except Exception as e:
-        print(f"[WARN] Error seeding demo operations: {e}")
-        db.rollback()
-
-@app.post("/api/operations/seed-demo")
-def trigger_seed_demo_operations(db: Session = Depends(get_db)):
-    """Fuerza la inicialización de datos demostrativos para pruebas."""
-    seed_demo_operations(db)
-    return {"message": "Operaciones demostrativas inicializadas con éxito."}
-
 @app.get("/api/operations/reset")
 @app.post("/api/operations/reset")
 def reset_all_operations(db: Session = Depends(get_db)):
@@ -1712,6 +1603,7 @@ def reset_all_operations(db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al vaciar operaciones: {str(e)}")
+
 
 
 

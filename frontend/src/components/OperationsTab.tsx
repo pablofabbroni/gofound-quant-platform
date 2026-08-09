@@ -77,32 +77,12 @@ export const OperationsTab: React.FC = () => {
               background: 'rgba(255, 255, 255, 0.08)',
               color: '#fff',
               border: '1px solid rgba(255, 255, 255, 0.15)',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
             }}
           >
             🔄 Actualizar
-          </button>
-          <button
-            onClick={handleSeedDemo}
-            disabled={seeding}
-            style={{
-              background: 'linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%)',
-              color: '#fff',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(49, 130, 206, 0.3)',
-            }}
-          >
-            {seeding ? 'Cargando...' : '⚡ Simular Operación Demo'}
           </button>
         </div>
       </div>
