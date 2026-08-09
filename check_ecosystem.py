@@ -1,5 +1,5 @@
 """
-check_ecosystem.py — Script de Diagnóstico del Ecosistema GFQP
+check_ecosystem.py — Script de Diagnostico del Ecosistema GFQP
 Ejecuta: python check_ecosystem.py
 """
 
@@ -11,7 +11,7 @@ import json
 from datetime import datetime, timezone
 
 print("=" * 70)
-print("🔍 DIAGNÓSTICO DEL ECOSISTEMA GOFOUND QUANT PLATFORM (GFQP)")
+print("[DIAGNOSTICO DEL ECOSISTEMA GOFOUND QUANT PLATFORM]")
 print("=" * 70)
 
 # 1. Verificar Backend API (Puerto 8000)
@@ -21,9 +21,9 @@ try:
     res = urllib.request.urlopen(req, timeout=3)
     if res.status == 200:
         backend_ok = True
-        print("🟢 Backend API (Puerto 8000):   [ACTIVO] (FastAPI respondiendo 200 OK)")
+        print("[OK] Backend API (Puerto 8000):   ACTIVO (FastAPI respondiendo 200 OK)")
 except Exception as e:
-    print(f"🔴 Backend API (Puerto 8000):   [INACTIVO] ({e})")
+    print(f"[FAIL] Backend API (Puerto 8000): INACTIVO ({e})")
 
 # 2. Verificar Frontend Server (Puerto 5173)
 frontend_ok = False
@@ -32,9 +32,9 @@ try:
     res = urllib.request.urlopen(req, timeout=3)
     if res.status == 200:
         frontend_ok = True
-        print("🟢 Frontend Web (Puerto 5173):  [ACTIVO] (Servidor Vite respondiendo 200 OK)")
+        print("[OK] Frontend Web (Puerto 5173):  ACTIVO (Servidor Vite respondiendo 200 OK)")
 except Exception as e:
-    print(f"🔴 Frontend Web (Puerto 5173):  [INACTIVO] ({e})")
+    print(f"[FAIL] Frontend Web (Puerto 5173): INACTIVO ({e})")
 
 # 3. Verificar Procesos en Ejecución (Windows)
 try:
@@ -45,14 +45,14 @@ try:
     ai_researcher_active = "ai_agent_researcher.py" in output
     
     if live_loop_active:
-        print("🟢 Recolector MT5 Mercado Live: [ACTIVO] (live_market_loop.py corriendo)")
+        print("[OK] Recolector MT5 Mercado Live: ACTIVO (live_market_loop.py corriendo)")
     else:
-        print("🟡 Recolector MT5 Mercado Live: [DETENIDO] (live_market_loop.py no detectado)")
+        print("[WARN] Recolector MT5 Mercado Live: DETENIDO (live_market_loop.py no detectado)")
 
     if ai_researcher_active:
-        print("🟢 Agente Investigador IA:     [ACTIVO] (ai_agent_researcher.py corriendo)")
+        print("[OK] Agente Investigador IA:     ACTIVO (ai_agent_researcher.py corriendo)")
     else:
-        print("🟡 Agente Investigador IA:     [EN ESPERA] (se ejecuta automáticamente cada 4h)")
+        print("[INFO] Agente Investigador IA:     EN ESPERA (se ejecuta automaticamente cada 4h)")
 
 except Exception as e:
     pass
@@ -67,15 +67,15 @@ if os.path.exists(db_path):
         last_ts = cur.execute("SELECT MAX(time) FROM candles").fetchone()[0]
         last_dt = datetime.fromtimestamp(last_ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S") if last_ts else "N/A"
         conn.close()
-        print(f"🟢 Base de Datos (SQLite):      [OK] ({total_candles:,} velas | Última: {last_dt} UTC)")
+        print(f"[OK] Base de Datos (SQLite):      OK ({total_candles:,} velas | Ultima: {last_dt} UTC)")
     except Exception as e:
-        print(f"🔴 Base de Datos (SQLite):      [ERROR] ({e})")
+        print(f"[ERROR] Base de Datos (SQLite):   ERROR ({e})")
 else:
-    print(f"🔴 Base de Datos (SQLite):      [NO ENCONTRADA]")
+    print(f"[FAIL] Base de Datos (SQLite):      NO ENCONTRADA")
 
 print("=" * 70)
 if not frontend_ok:
-    print("👉 ACCIÓN REQUERIDA: Inicia el Frontend ejecutando en la terminal:")
+    print("ACCION REQUERIDA: Inicia el Frontend ejecutando en la terminal:")
     print("   cd frontend")
     print("   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass")
     print("   npm run dev -- --host")
