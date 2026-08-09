@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import json
 import sqlite3
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Tuple
 
 from fastapi import FastAPI, HTTPException, Depends, status
@@ -143,9 +143,13 @@ def fetch_candles(symbol: str, timeframe: str, limit: int) -> Tuple[List[Dict], 
 def format_iso(dt_val):
     if not dt_val:
         return None
+    if isinstance(dt_val, (int, float)):
+        return datetime.fromtimestamp(dt_val, tz=timezone.utc).isoformat()
     if isinstance(dt_val, datetime):
         return dt_val.isoformat()
     dt_str = str(dt_val).strip()
+    if dt_str.isdigit():
+        return datetime.fromtimestamp(int(dt_str), tz=timezone.utc).isoformat()
     if " " in dt_str and "T" not in dt_str:
         dt_str = dt_str.replace(" ", "T")
     return dt_str
