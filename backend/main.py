@@ -1701,3 +1701,15 @@ def trigger_seed_demo_operations(db: Session = Depends(get_db)):
     seed_demo_operations(db)
     return {"message": "Operaciones demostrativas inicializadas con éxito."}
 
+@app.post("/api/operations/reset")
+def reset_all_operations(db: Session = Depends(get_db)):
+    """Elimina 100% las operaciones de la base de datos dejando el panel en 0 para producción."""
+    try:
+        deleted = db.query(TradeOperation).delete()
+        db.commit()
+        return {"message": f"Se han eliminado {deleted} operaciones. Panel vaciado a 0."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al vaciar operaciones: {str(e)}")
+
+
