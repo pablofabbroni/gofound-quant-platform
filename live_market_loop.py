@@ -26,13 +26,19 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("live_market_loop")
 
-SYMBOLS_TO_MONITOR = ["EURUSD", "XAUUSD", "GBPUSD"]
+SYMBOLS_TO_MONITOR = [
+    "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", 
+    "USDCAD", "USDCHF", "NZDUSD", "GBPJPY", 
+    "EURGBP", "EURJPY", "XAUUSD", "XAGUSD"
+]
 TIMEFRAME_MAP = {
+    "M15": (mt5.TIMEFRAME_M15, 900),
     "M30": (mt5.TIMEFRAME_M30, 1800),
-    "H1":  (mt5.TIMEFRAME_H1, 3600)
+    "H1":  (mt5.TIMEFRAME_H1, 3600),
+    "H4":  (mt5.TIMEFRAME_H4, 14400)
 }
 
-DEFAULT_TF = "M30"
+DEFAULT_TF = "M15"
 
 class LiveMarketLoop:
     def __init__(self, symbols=SYMBOLS_TO_MONITOR, tf_code=DEFAULT_TF):
