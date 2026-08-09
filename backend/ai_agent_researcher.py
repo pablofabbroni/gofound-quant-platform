@@ -37,11 +37,11 @@ def get_api_base() -> str:
     if env_url:
         return env_url.rstrip("/")
     
-    candidates = ["http://127.0.0.1:80", "http://127.0.0.1:8000", "http://127.0.0.1"]
+    candidates = ["http://127.0.0.1:8000", "http://localhost:8000", "http://127.0.0.1:80"]
     for url in candidates:
         try:
-            req = urllib.request.Request(f"{url}/api/status", method="GET")
-            res = urllib.request.urlopen(req, timeout=1)
+            req = urllib.request.Request(f"{url}/docs", method="GET")
+            res = urllib.request.urlopen(req, timeout=2)
             if res.status == 200:
                 return url
         except Exception:
@@ -68,7 +68,7 @@ def get_auth_token(email="admin@gofound.tech", password="AdminQuant2026!") -> Op
         headers={"Content-Type": "application/json"}
     )
     try:
-        res = urllib.request.urlopen(req, timeout=5)
+        res = urllib.request.urlopen(req, timeout=15)
         data = json.loads(res.read().decode("utf-8"))
         return data.get("access_token")
     except Exception as e:
@@ -233,7 +233,7 @@ def run_agent_research_cycle() -> Dict[str, Any]:
         current_params = {}
         try:
             req_params = urllib.request.Request(f"{api_base}/api/analysts/parameters", headers=headers)
-            res_params = urllib.request.urlopen(req_params, timeout=5)
+            res_params = urllib.request.urlopen(req_params, timeout=15)
             params_list = json.loads(res_params.read().decode("utf-8")).get("data", [])
             for p in params_list:
                 if p.get("analyst_name") == analyst:
@@ -259,7 +259,7 @@ def run_agent_research_cycle() -> Dict[str, Any]:
                 data=json.dumps(baseline_req).encode("utf-8"),
                 headers=headers
             )
-            res_base = urllib.request.urlopen(req_base, timeout=10)
+            res_base = urllib.request.urlopen(req_base, timeout=60)
             base_exp = json.loads(res_base.read().decode("utf-8")).get("experiment", {})
             baseline_metrics = {
                 "sharpe_ratio": base_exp.get("sharpe_ratio", 0.0),
@@ -296,27 +296,27 @@ def run_agent_research_cycle() -> Dict[str, Any]:
                 data=json.dumps(hypo_req).encode("utf-8"),
                 headers=headers
             )
-            res_hypo = urllib.request.urlopen(req_hypo, timeout=15)
+            res_hypo = urllib.request.urlopen(req_hypo, timeout=60)
             exp_data = json.loads(res_hypo.read().decode("utf-8")).get("experiment", {})
 
             exp_id = exp_data.get("id")
             new_sharpe = exp_data.get("sharpe_ratio", 0.0)
             new_winrate = exp_data.get("win_rate", 0.0)
             new_pnl = exp_data.get("net_profit_pct", 0.0)
-            best_params = exp_data.get("best_params", {})
 
             delta_sharpe = new_sharpe - baseline_metrics["sharpe_ratio"]
-            print(f"   🧪 [Resultado Experimento #{exp_id}]: Sharpe={new_sharpe} (Δ={delta_sharpe:+.2f}) | WinRate={new_winrate}% | PnL={new_pnl}%")
+            print(f"   🧪 Resultado Experimento: Sharpe={new_sharpe} (Δ={delta_sharpe:+.2f}) | WinRate={new_winrate}% | PnL={new_pnl}%")
 
-            # 5. Strict Application Decision Threshold (Delta Sharpe >= +0.15 or significant win rate improvement)
-            if delta_sharpe >= 0.15 or (new_winrate > baseline_metrics["win_rate"] + 3.0 and new_pnl > baseline_metrics["net_profit_pct"]):
-                print(f"   ✅ [Decisión IA] La hipótesis SUPERA el baseline. Auto-aplicando parámetros a DB activa...")
+            # 5. Evaluate strict performance improvement & Auto-Apply
+            if delta_sharpe >= 0.15 or (new_winrate > baseline_metrics["win_rate"] and new_sharpe >= baseline_metrics["sharpe_ratio"]):
+                print(f"   ✅ [Decisión IA] ¡Mejora validada! Auto-aplicando parámetros ganadores de {analyst}...")
                 req_apply = urllib.request.Request(
-                    f"{API_BASE}/api/lab/experiments/{exp_id}/apply",
+                    f"{api_base}/api/lab/experiments/{exp_id}/apply",
                     method="POST",
                     headers=headers
                 )
-                res_apply = urllib.request.urlopen(req_apply, timeout=5)
+                res_apply = urllib.request.urlopen(req_apply, timeout=20)
+                best_params = json.loads(res_apply.read().decode("utf-8")).get("applied_params", {})
                 applied_count += 1
                 applied_details.append({
                     "experiment_id": exp_id,
@@ -332,7 +332,7 @@ def run_agent_research_cycle() -> Dict[str, Any]:
             print(f"   [Error] Fallo en experimento para {analyst}: {err}")
 
     # Update global tracker
-    now_iso = datetime.datetime.utcnow().isoformat()
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
     LATEST_RESEARCH_STATUS["last_run"] = now_iso
     LATEST_RESEARCH_STATUS["active_provider"] = provider_name
     LATEST_RESEARCH_STATUS["analysts_tested"] = analysts
