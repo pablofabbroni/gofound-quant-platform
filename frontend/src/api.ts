@@ -123,6 +123,8 @@ export const api = {
       ),
     seedDemo: () =>
       request<{ message: string }>('/api/operations/seed-demo', { method: 'POST' }),
+    reset: () =>
+      request<{ message: string }>('/api/operations/reset', { method: 'POST' }),
   },
 };
 

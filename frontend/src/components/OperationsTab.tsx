@@ -44,6 +44,19 @@ export const OperationsTab: React.FC = () => {
     }
   };
 
+  const handleResetOperations = async () => {
+    if (!confirm('¿Deseas reiniciar todas las operaciones a 0?')) return;
+    setSeeding(true);
+    try {
+      await api.operations.reset();
+      await fetchData();
+    } catch (err: any) {
+      alert('Error al reiniciar operaciones: ' + err.message);
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   const formatPrice = (val: number | null) => (val !== null && val !== undefined ? val.toFixed(4) : '—');
   const formatMoney = (val: number) => (val >= 0 ? `+$${val.toFixed(2)}` : `-$${Math.abs(val).toFixed(2)}`);
 
@@ -83,6 +96,37 @@ export const OperationsTab: React.FC = () => {
             }}
           >
             🔄 Actualizar
+          </button>
+          <button
+            onClick={handleResetOperations}
+            disabled={seeding}
+            style={{
+              background: 'rgba(229, 62, 62, 0.15)',
+              color: '#fc8181',
+              border: '1px solid rgba(229, 62, 62, 0.3)',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            🗑️ Resetear a 0
+          </button>
+          <button
+            onClick={handleSeedDemo}
+            disabled={seeding}
+            style={{
+              background: 'linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%)',
+              color: '#fff',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(49, 130, 206, 0.3)',
+            }}
+          >
+            {seeding ? 'Cargando...' : '⚡ Simular Operación Demo'}
           </button>
         </div>
       </div>

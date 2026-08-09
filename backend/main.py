@@ -1519,7 +1519,7 @@ def get_operations_summary(db: Session = Depends(get_db)):
         
         gross_profit = sum(t.pnl_usd for t in wins)
         gross_loss = abs(sum(t.pnl_usd for t in losses))
-        profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else (round(gross_profit, 2) if gross_profit > 0 else 1.0)
+        profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else (round(gross_profit, 2) if gross_profit > 0 else 0.0)
         
         net_pnl_usd = round(sum(t.pnl_usd for t in closed_trades), 2)
         total_pips = round(sum(t.pnl_pips for t in closed_trades), 1)
@@ -1605,5 +1605,17 @@ def reset_all_operations(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Error al vaciar operaciones: {str(e)}")
 
 
+
+
+@app.post("/api/operations/reset")
+def reset_operations(db: Session = Depends(get_db)):
+    """Reinicia la lista de operaciones a 0."""
+    try:
+        db.query(TradeOperation).delete()
+        db.commit()
+        return {"message": "Historial de operaciones reiniciado a 0 con éxito."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al reiniciar operaciones: {str(e)}")
 
 
