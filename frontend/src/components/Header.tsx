@@ -27,7 +27,7 @@ export default function Header({ user, onLogout }: Props) {
             <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center">
               <span className="text-accent-light font-bold text-[10px]">{initial}</span>
             </div>
-            <span className="text-xs text-gray-300">{user.email}</span>
+            <span className="text-xs text-gray-300 max-w-[110px] sm:max-w-none truncate">{user.email}</span>
           </div>
           <button
             onClick={onLogout}

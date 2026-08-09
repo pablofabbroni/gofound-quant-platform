@@ -46,15 +46,24 @@ export const OperationsTab: React.FC = () => {
 
   const formatPrice = (val: number | null) => (val !== null && val !== undefined ? val.toFixed(4) : '—');
   const formatMoney = (val: number) => (val >= 0 ? `+$${val.toFixed(2)}` : `-$${Math.abs(val).toFixed(2)}`);
+  const formatDate = (val: string | null) => {
+    if (!val) return '—';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return val;
+      const pad = (n: number) => (n < 10 ? '0' + n : n);
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    } catch {
+      return val;
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* ── HEADER DE SECCIÓN ── */}
       <div
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
           background: 'var(--panel-bg, #1a1e29)',
           padding: '16px 24px',
           borderRadius: '12px',
@@ -297,6 +306,7 @@ export const OperationsTab: React.FC = () => {
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: '#a0aec0' }}>
                   <th style={{ padding: '12px' }}>Ticket</th>
+                  <th style={{ padding: '12px' }}>Fecha / Hora</th>
                   <th style={{ padding: '12px' }}>Par / TF</th>
                   <th style={{ padding: '12px' }}>Tipo</th>
                   <th style={{ padding: '12px' }}>Entrada</th>
@@ -319,6 +329,9 @@ export const OperationsTab: React.FC = () => {
                   >
                     <td style={{ padding: '12px', fontFamily: 'monospace', fontWeight: 600, color: '#e2e8f0' }}>
                       {op.ticket_id}
+                    </td>
+                    <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '0.8rem', color: '#cbd5e0', whiteSpace: 'nowrap' }}>
+                      {formatDate(op.opened_at)}
                     </td>
                     <td style={{ padding: '12px', fontWeight: 600, color: '#fff' }}>
                       {op.symbol} <span style={{ fontSize: '0.75rem', color: '#718096' }}>{op.timeframe}</span>
@@ -431,9 +444,16 @@ export const OperationsTab: React.FC = () => {
             }}
           >
             <h3 style={{ margin: '0 0 12px 0', color: '#fff' }}>
-              🤖 Justificación IA: {selectedOp.symbol} ({selectedOp.operation_type})
+              🤖 Justificación IA: {selectedOp.symbol} ({selectedOp.operation_type}) #{selectedOp.ticket_id}
             </h3>
             
+            <div style={{ marginBottom: '12px' }}>
+              <strong style={{ color: '#a0aec0', fontSize: '0.85rem' }}>Fecha y Hora de Apertura:</strong>
+              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '6px 10px', borderRadius: '6px', color: '#cbd5e0', marginTop: '4px', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                📅 {formatDate(selectedOp.opened_at)}
+              </div>
+            </div>
+
             <div style={{ marginBottom: '12px' }}>
               <strong style={{ color: '#a0aec0', fontSize: '0.85rem' }}>Consenso del Comité:</strong>
               <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px', color: '#48bb78', marginTop: '4px' }}>
