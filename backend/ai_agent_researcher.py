@@ -15,6 +15,10 @@ Este agente actúa como un científico de datos e investigador cuantitativo aut�
 
 import os
 import sys
+
+# Ensure backend directory is in sys.path for internal module imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import json
 import urllib.request
 import urllib.error
